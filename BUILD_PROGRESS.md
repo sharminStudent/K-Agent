@@ -59,7 +59,7 @@ Status values:
 |---|---|---|---|
 | 5.1 | `app/Services` directory created | Done | `ChatService` added |
 | 5.2 | `AgentService` created | Done | Added for company agent config and widget token handling |
-| 5.3 | `KnowledgeIngestionService` created | Not Started | Missing |
+| 5.3 | `KnowledgeIngestionService` created | Done | `KnowledgeService` now handles upload, extraction, and chunk preparation |
 | 5.4 | `EmbeddingService` created | Not Started | Missing |
 | 5.5 | `VectorStoreService` created | Not Started | Missing |
 | 5.6 | `RetrievalService` created | Not Started | Missing |
@@ -73,31 +73,31 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 6.1 | Agent/company settings schema implemented | In Progress | SaaS-oriented company fields added to `agents` table |
+| 6.1 | Agent/company settings schema implemented | Done | SaaS-oriented company fields and agent settings endpoints added |
 | 6.2 | `widget_token` generation implemented | Done | Auto-generated in `Agent` model and regeneratable via `AgentService` |
 | 6.3 | Single-company UI behavior enforced | Not Started | Spec assumption superseded by SaaS requirement; company-scoped UI still to be built |
-| 6.4 | Agent settings editable in admin | Not Started | Missing |
+| 6.4 | Agent settings editable in admin | In Progress | Backend create/view/update/token-regeneration APIs are ready for Filament UI |
 
 ## 7. Knowledge Management
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 7.1 | Knowledge upload endpoint exists | Not Started | Missing |
-| 7.2 | File validation rules implemented | Not Started | Missing |
-| 7.3 | File storage configured | Not Started | Missing |
-| 7.4 | File metadata saved in PostgreSQL | Not Started | Missing |
-| 7.5 | Knowledge linked to `agent_id` | Not Started | Missing |
+| 7.1 | Knowledge upload endpoint exists | Done | Implemented at `/api/knowledge/upload` |
+| 7.2 | File validation rules implemented | Done | File type and size validation added |
+| 7.3 | File storage configured | Done | Files stored per company agent on configured filesystem disk |
+| 7.4 | File metadata saved in PostgreSQL | Done | Upload metadata saved in `knowledge_files` |
+| 7.5 | Knowledge linked to `agent_id` | Done | Uploads resolve company by widget token and store `agent_id` |
 | 7.6 | Filament knowledge management UI exists | Not Started | Missing |
 
 ## 8. Ingestion / Embeddings
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 8.1 | Text extraction implemented | Not Started | Missing |
-| 8.2 | Chunking implemented | Not Started | Missing |
+| 8.1 | Text extraction implemented | Done | TXT, CSV, JSON, and DOCX extraction added |
+| 8.2 | Chunking implemented | Done | Extracted text is chunked and stored as processing artifacts |
 | 8.3 | OpenAI embeddings integrated | Not Started | Missing |
 | 8.4 | Vector DB storage integrated | Not Started | Missing |
-| 8.5 | Ingestion status tracking exists | Not Started | Missing |
+| 8.5 | Ingestion status tracking exists | Done | Knowledge files transition through pending, processing, ready, failed |
 | 8.6 | Embeddings stored outside PostgreSQL | Not Started | Missing |
 
 ## 9. Chat Backend
@@ -194,7 +194,7 @@ Status values:
 | 18.1 | Unit tests for services | Not Started | Missing |
 | 18.2 | Feature tests for chat endpoints | In Progress | Added, but local run is blocked by missing PDO SQLite driver in PHP |
 | 18.3 | Feature tests for lead flow | Done | Added and passing |
-| 18.4 | Feature tests for knowledge upload | Not Started | Missing |
+| 18.4 | Feature tests for knowledge upload | Done | Upload and processing coverage added and passing |
 | 18.5 | Default example tests replaced or expanded | Done | Default example tests replaced with chat API tests |
 
 ## 19. Deployment
