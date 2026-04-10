@@ -13,8 +13,8 @@ Status values:
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 1.1 | Laravel project created | Done | Base Laravel app exists |
-| 1.2 | PHP version aligned with spec (PHP 8.4) | Not Started | `composer.json` currently uses `^8.3` |
-| 1.3 | PostgreSQL configured | Not Started | Not verified yet |
+| 1.2 | PHP version aligned with spec (PHP 8.4) | Not Started | Intentional deviation: project kept on PHP 8.3 |
+| 1.3 | PostgreSQL configured | Done | `.env` uses PostgreSQL and migrations ran successfully |
 | 1.4 | `.env` configured for K-Agent services | In Progress | `.env` exists, project-specific setup still missing |
 | 1.5 | Vite installed and working | Done | Present |
 | 1.6 | Tailwind installed and working | Done | Present |
@@ -34,37 +34,37 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 3.1 | `agents` migration created | Not Started | Missing |
-| 3.2 | `chat_sessions` migration created | Not Started | Missing |
-| 3.3 | `chat_messages` migration created | Not Started | Missing |
-| 3.4 | `leads` migration created | Not Started | Missing |
-| 3.5 | `knowledge_files` migration created | Not Started | Missing |
-| 3.6 | All main tables linked to `agent_id` | Not Started | Missing |
-| 3.7 | Indexes added for common queries | Not Started | Missing |
+| 3.1 | `agents` migration created | Done | Implemented and migrated |
+| 3.2 | `chat_sessions` migration created | Done | Implemented and migrated |
+| 3.3 | `chat_messages` migration created | Done | Implemented and migrated |
+| 3.4 | `leads` migration created | Done | Implemented and migrated |
+| 3.5 | `knowledge_files` migration created | Done | Implemented and migrated |
+| 3.6 | All main tables linked to `agent_id` | Done | Foreign keys added where required |
+| 3.7 | Indexes added for common queries | Done | Core indexes added on session, message, lead, and knowledge tables |
 
 ## 4. Models
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 4.1 | `Agent` model created | Not Started | Missing |
-| 4.2 | `ChatSession` model created | Not Started | Missing |
-| 4.3 | `ChatMessage` model created | Not Started | Missing |
-| 4.4 | `Lead` model created | Not Started | Missing |
-| 4.5 | `KnowledgeFile` model created | Not Started | Missing |
-| 4.6 | Relationships defined correctly | Not Started | Missing |
+| 4.1 | `Agent` model created | Done | Implemented |
+| 4.2 | `ChatSession` model created | Done | Implemented |
+| 4.3 | `ChatMessage` model created | Done | Implemented |
+| 4.4 | `Lead` model created | Done | Implemented |
+| 4.5 | `KnowledgeFile` model created | Done | Implemented |
+| 4.6 | Relationships defined correctly | Done | Base relationships added |
 
 ## 5. Service Layer
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 5.1 | `app/Services` directory created | Not Started | Missing |
-| 5.2 | `AgentService` created | Not Started | Missing |
+| 5.1 | `app/Services` directory created | Done | `ChatService` added |
+| 5.2 | `AgentService` created | Done | Added for company agent config and widget token handling |
 | 5.3 | `KnowledgeIngestionService` created | Not Started | Missing |
 | 5.4 | `EmbeddingService` created | Not Started | Missing |
 | 5.5 | `VectorStoreService` created | Not Started | Missing |
 | 5.6 | `RetrievalService` created | Not Started | Missing |
-| 5.7 | `ChatService` created | Not Started | Missing |
-| 5.8 | `LeadService` created | Not Started | Missing |
+| 5.7 | `ChatService` created | Done | Session creation and message persistence implemented |
+| 5.8 | `LeadService` created | Done | Company-scoped lead storage implemented |
 | 5.9 | `GuardrailService` created | Not Started | Missing |
 | 5.10 | Controllers kept thin | Not Started | Feature controllers not built yet |
 | 5.11 | Filament contains no business logic | Not Started | Filament not built yet |
@@ -73,9 +73,9 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 6.1 | Agent/company settings schema implemented | Not Started | Missing |
-| 6.2 | `widget_token` generation implemented | Not Started | Missing |
-| 6.3 | Single-company UI behavior enforced | Not Started | Missing |
+| 6.1 | Agent/company settings schema implemented | In Progress | SaaS-oriented company fields added to `agents` table |
+| 6.2 | `widget_token` generation implemented | Done | Auto-generated in `Agent` model and regeneratable via `AgentService` |
+| 6.3 | Single-company UI behavior enforced | Not Started | Spec assumption superseded by SaaS requirement; company-scoped UI still to be built |
 | 6.4 | Agent settings editable in admin | Not Started | Missing |
 
 ## 7. Knowledge Management
@@ -104,18 +104,18 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 9.1 | `/chat/session` endpoint exists | Not Started | Missing |
-| 9.2 | `/chat/send-message` endpoint exists | Not Started | Missing |
-| 9.3 | Session creation logic implemented | Not Started | Missing |
-| 9.4 | Chat messages persisted | Not Started | Missing |
-| 9.5 | Chat data linked to session and agent | Not Started | Missing |
-| 9.6 | API validation added | Not Started | Missing |
+| 9.1 | `/chat/session` endpoint exists | Done | Implemented at `/api/chat/session` |
+| 9.2 | `/chat/send-message` endpoint exists | Done | Implemented at `/api/chat/send-message` |
+| 9.3 | Session creation logic implemented | Done | `ChatService` creates sessions by widget token |
+| 9.4 | Chat messages persisted | Done | User messages stored in `chat_messages` |
+| 9.5 | Chat data linked to session and agent | Done | Session and message writes are agent-scoped |
+| 9.6 | API validation added | Done | Form request validation added |
 
 ## 10. RAG
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 10.1 | Agent resolved by `widget_token` | Not Started | Missing |
+| 10.1 | Agent resolved by `widget_token` | Done | Base agent lookup implemented in `ChatService` |
 | 10.2 | Retrieval from vector DB implemented | Not Started | Missing |
 | 10.3 | OpenAI chat integration implemented | Not Started | Missing |
 | 10.4 | Prompt constrained to company data | Not Started | Missing |
@@ -135,10 +135,10 @@ Status values:
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 12.1 | Lead intent flow designed | Not Started | Missing |
-| 12.2 | `/lead/store` endpoint exists | Not Started | Missing |
-| 12.3 | Lead validation implemented | Not Started | Missing |
-| 12.4 | Leads stored in DB | Not Started | Missing |
-| 12.5 | Leads linked to session and agent | Not Started | Missing |
+| 12.2 | `/lead/store` endpoint exists | Done | Implemented at `/api/lead/store` |
+| 12.3 | Lead validation implemented | Done | Form request validation added |
+| 12.4 | Leads stored in DB | Done | Leads now persist via `LeadService` |
+| 12.5 | Leads linked to session and agent | Done | Lead storage is agent-scoped and session-aware |
 | 12.6 | Lead admin UI exists | Not Started | Missing |
 | 12.7 | Lead export works | Not Started | Missing |
 
@@ -184,7 +184,7 @@ Status values:
 |---|---|---|---|
 | 17.1 | OpenAI failures handled safely | Not Started | Missing |
 | 17.2 | Vector DB failures handled safely | Not Started | Missing |
-| 17.3 | Validation/error response format defined | Not Started | Missing |
+| 17.3 | Validation/error response format defined | In Progress | Form request validation added for chat endpoints |
 | 17.4 | Logs added for chat, lead, ingestion, fallback | Not Started | Missing |
 
 ## 18. Testing
@@ -192,10 +192,10 @@ Status values:
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 18.1 | Unit tests for services | Not Started | Missing |
-| 18.2 | Feature tests for chat endpoints | Not Started | Missing |
-| 18.3 | Feature tests for lead flow | Not Started | Missing |
+| 18.2 | Feature tests for chat endpoints | In Progress | Added, but local run is blocked by missing PDO SQLite driver in PHP |
+| 18.3 | Feature tests for lead flow | Done | Added and passing |
 | 18.4 | Feature tests for knowledge upload | Not Started | Missing |
-| 18.5 | Default example tests replaced or expanded | Not Started | Only default tests exist now |
+| 18.5 | Default example tests replaced or expanded | Done | Default example tests replaced with chat API tests |
 
 ## 19. Deployment
 
