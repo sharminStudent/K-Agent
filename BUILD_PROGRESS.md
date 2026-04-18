@@ -21,6 +21,39 @@ Status values:
 | 1.7 | Base app runs locally | Done | Backend app and test suite run locally |
 | 1.8 | Project README updated for K-Agent | Not Started | Still mostly default Laravel README |
 
+## 1A. Proposal Tech Alignment
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 1A.1 | Laravel used as core backend framework | Done | Core application is built on Laravel |
+| 1A.2 | PHP used as core backend language | Done | Application runs on PHP |
+| 1A.3 | PostgreSQL used as main relational database | Done | `.env` and `.env.testing` use PostgreSQL |
+| 1A.4 | Tailwind CSS used for frontend styling | Done | Tailwind is installed and used |
+| 1A.5 | Node.js frontend/tooling runtime available | Done | `npm`/Vite workflow is present |
+| 1A.6 | OpenAI used for chat and embeddings | Done | Chat completion and embeddings are implemented |
+| 1A.7 | Text-Embedding-3 family configured for embeddings | Done | OpenAI embedding model is configurable and used |
+| 1A.8 | Vector database used for RAG storage | Done | Qdrant is implemented and remains acceptable for the proposal |
+| 1A.9 | Livewire 4 used for proposal-required widget interaction flows | Done | Widget frame now mounts through a Livewire component while leaving Filament intact |
+| 1A.10 | Alpine.js used for proposal-required widget client behavior | Done | Widget interaction/state is now Alpine-driven |
+| 1A.11 | Laravel Reverb used for widget realtime chat streaming | In Progress | Reverb is installed and wired for realtime widget delivery; deeper token-level streaming can still be expanded |
+| 1A.12 | WebSocket streaming implemented for widget delivery | In Progress | Widget runtime now uses the WebSocket/Reverb path for assistant delivery, though streaming is not yet token-by-token |
+| 1A.13 | Railway deployment target prepared | Not Started | Proposal defines Railway as the deployment platform |
+| 1A.14 | GitHub-based continuous deployment prepared | Not Started | Proposal defines automated deployment through GitHub integration |
+| 1A.15 | Laravel Herd documented as standard local development environment | Not Started | Proposal expects Herd for local development setup and this should be reflected in project docs |
+| 1A.16 | Visual Studio Code documented as the recommended editor | Not Started | Proposal mentions VS Code; this is documentation-only, not an application requirement |
+
+## 1B. Proposal Tech Placement Map
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 1B.1 | Laravel Herd mapped to local setup and onboarding docs | Not Started | Must be documented in setup instructions rather than implemented in app code |
+| 1B.2 | Livewire 4 mapped to proposal-aligned widget-facing Laravel UI | Done | Widget-related flows now use Livewire without refactoring the existing Filament dashboard |
+| 1B.3 | Alpine.js mapped to widget frontend behavior | Done | Widget frontend behavior is now Alpine-driven |
+| 1B.4 | Laravel Reverb mapped to widget chat runtime streaming layer | Done | Reverb-backed event broadcasting is now part of the widget runtime path |
+| 1B.5 | WebSockets mapped to widget/backend realtime transport | Done | Widget/backend realtime transport path is now in place |
+| 1B.6 | Railway mapped to deployment topology | Not Started | Must be reflected in deployment config and production documentation |
+| 1B.7 | GitHub CD mapped to deployment automation | Not Started | Must be reflected in workflow automation and release process |
+
 ## 2. Admin / Filament
 
 | ID | Task | Status | Notes |
@@ -147,7 +180,7 @@ Status values:
 | 12.4 | Leads stored in DB | Done | Leads now persist via `LeadService` |
 | 12.5 | Leads linked to session and agent | Done | Lead storage is agent-scoped and session-aware |
 | 12.6 | Lead admin UI exists | Done | `LeadResource` provides tenant-scoped lead management UI |
-| 12.7 | Lead export works | Not Started | Missing |
+| 12.7 | Lead export works | Done | CSV export exists from the Filament leads page |
 
 ## 13. Chat Logs
 
@@ -163,21 +196,22 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 14.1 | iframe widget architecture started | Not Started | Missing |
-| 14.2 | Widget bootstrap using token exists | Not Started | Missing |
-| 14.3 | Widget sends messages to backend | Not Started | Missing |
-| 14.4 | Widget displays responses | Not Started | Missing |
-| 14.5 | Session continuity handled | Not Started | Missing |
-| 14.6 | Alpine.js widget UI implemented | Not Started | Missing |
+| 14.1 | iframe widget architecture started | Done | Embed script, iframe frame, preview, and widget routes exist |
+| 14.2 | Widget bootstrap using token exists | Done | Widget bootstrap endpoint exists and is tested |
+| 14.3 | Widget sends messages to backend | Done | Widget posts to chat and lead endpoints |
+| 14.4 | Widget displays responses | Done | Widget renders assistant replies and errors |
+| 14.5 | Session continuity handled | In Progress | Existing session bootstrap and local archive/session restore exist, but proposal-aligned realtime continuity is incomplete |
+| 14.6 | Alpine.js widget UI implemented | Done | Widget interaction layer is now Alpine-based |
+| 14.7 | Livewire 4 integrated into proposal-aligned widget/application interaction flow | Done | Widget flow is now mounted through Livewire while the existing Filament dashboard remains unchanged |
 
 ## 15. Realtime
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 15.1 | Laravel Reverb installed | Not Started | Missing |
-| 15.2 | Broadcast/event setup configured | Not Started | Missing |
-| 15.3 | Streamed responses implemented | Not Started | Missing |
-| 15.4 | Widget receives streamed chunks | Not Started | Missing |
+| 15.1 | Laravel Reverb installed | Done | Reverb package is installed |
+| 15.2 | Broadcast/event setup configured | Done | Broadcasting config, channels route, and widget assistant event path are wired |
+| 15.3 | Streamed responses implemented | In Progress | Widget assistant updates are delivered through the realtime path, but token-level chunk streaming is still to be expanded |
+| 15.4 | Widget receives streamed chunks | In Progress | Widget receives assistant updates through the Reverb/WebSocket path; chunk granularity can still be improved |
 
 ## 16. Integrations
 
@@ -186,6 +220,31 @@ Status values:
 | 16.1 | OpenAI env config added | Done | Platform-level OpenAI config exists in `.env`/`services.php`, with per-company override support |
 | 16.2 | Vector DB env/config added | Done | Qdrant config exists in `.env`/`services.php`, with per-company override support |
 | 16.3 | Service config updated for APIs | Done | Runtime services now resolve effective provider config per company with platform fallback |
+
+## 16A. Proposal Infra
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 16A.1 | Railway deployment path documented and prepared | Not Started | Proposal requires Railway, current repo has no deployment config |
+| 16A.2 | GitHub continuous deployment path documented and prepared | Not Started | Proposal requires automated deployment, current repo has no CD workflow for deploy |
+| 16A.3 | WebSocket infrastructure aligned with proposal | Not Started | Proposal requires Reverb/WebSockets, current repo does not implement it |
+
+## 16B. Proposal Compliance Summary
+
+| Area | Proposal Requirement | Current State | Required Action |
+|---|---|---|---|
+| Local development | Laravel Herd | Not documented | Document Herd as the standard local environment |
+| Interactive widget-facing Laravel UI | Livewire 4 | In use | Widget flow uses Livewire while Filament remains unchanged |
+| Widget behavior | Alpine.js | In use | Widget interaction layer is Alpine-based |
+| Realtime runtime | Laravel Reverb | In use | Reverb is installed and used for widget assistant delivery |
+| Streaming transport | WebSockets | In use | Widget assistant delivery uses the WebSocket/Reverb path |
+| Deployment | Railway | Not configured | Add Railway deployment strategy/config |
+| Deployment automation | GitHub CD | Not configured | Add deployment workflow automation |
+
+## 16C. Proposal Tech Not Yet Used In Code
+
+- `Railway` deployment
+- `GitHub Continuous Deployment`
 
 ## 17. Reliability
 
@@ -207,7 +266,7 @@ Status values:
   - Profile Settings: company-owned basic profile/business information
   - Knowledge: uploaded knowledge records in a detailed organized table with add/edit flow
   - Dashboard Settings: light/dark mode and basic dashboard preferences
-- Dashboard UI should be built in Filament only. Business logic must remain in Services.
+- Dashboard UI should remain in Filament. Proposal-alignment work for Livewire/Alpine/Reverb/WebSockets should be applied to the widget/runtime side, while business logic remains in Services.
 
 ## 18. Testing
 
@@ -237,10 +296,10 @@ Status values:
   - Company-scoped chat, lead, and knowledge ingestion APIs
   - OpenAI-backed responses, embeddings, and retrieval with Qdrant or file-backed fallback
   - Working Filament admin panel with custom login, dashboard widgets, and tenant-scoped resources/pages
+  - Working iframe widget shell with bootstrap, help, session restore, and API integration
   - General Settings sidebar flow and profile view/edit pages
   - Passing feature tests for admin/Filament, agent, chat, lead, and knowledge flows
 - Missing for SaaS readiness:
   - Billing/subscription model
-  - Widget frontend
-  - Realtime streaming
-  - Deployment and production operations plan
+  - Railway deployment and GitHub continuous deployment plan
+  - Broader deployment and production operations plan

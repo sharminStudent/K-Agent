@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\WidgetAssistantMessageCreated;
 use App\Models\Agent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
@@ -76,6 +77,12 @@ class ChatService
 
             return $message;
         });
+
+        try {
+            broadcast(new WidgetAssistantMessageCreated($chatSession->fresh(), $assistantMessage));
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
 
         return [$chatSession->fresh(), $userMessage, $assistantMessage];
     }

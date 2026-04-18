@@ -43,9 +43,8 @@ class WidgetController extends Controller
         return view('widget.frame', [
             'agent' => $agent,
             'bootstrapUrl' => route('widget.bootstrap', $agent->widget_token),
-            'createSessionUrl' => url('/api/chat/session'),
-            'sendMessageUrl' => url('/api/chat/send-message'),
-            'storeLeadUrl' => url('/api/lead/store'),
+            'helpUrl' => route('widget.help', $agent->widget_token),
+            'helpArticleBaseUrl' => url('/widget/'.$agent->widget_token.'/help'),
             'lightLogoUrl' => $agent->light_logo_url ?: $agent->logo_url ?: asset('images/fix.png'),
             'darkLogoUrl' => $agent->dark_logo_url ?: $agent->logo_url ?: asset('images/login_logo.png'),
         ]);

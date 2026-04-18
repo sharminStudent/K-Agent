@@ -45,9 +45,9 @@ class WidgetWebTest extends TestCase
         $response->assertOk();
         $response->assertSee('K-Agent Demo');
         $response->assertSee('Ask us anything about your business.');
-        $response->assertSee('api\\/chat\\/session', false);
-        $response->assertSee('Chats');
-        $response->assertSee('Help');
+        $response->assertSee('Support Agent');
+        $response->assertSee('Ask a question....');
+        $response->assertSee('privacy policy');
     }
 
     public function test_it_renders_a_preview_page_that_loads_the_embed_script(): void
