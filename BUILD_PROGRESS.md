@@ -18,17 +18,24 @@ Status values:
 | 1.4 | `.env` configured for K-Agent services | In Progress | `.env` exists, project-specific setup still missing |
 | 1.5 | Vite installed and working | Done | Present |
 | 1.6 | Tailwind installed and working | Done | Present |
-| 1.7 | Base app runs locally | Not Started | Not verified in tracker yet |
-| 1.8 | Project README updated for K-Agent | Not Started | Still default Laravel README |
+| 1.7 | Base app runs locally | Done | Backend app and test suite run locally |
+| 1.8 | Project README updated for K-Agent | Not Started | Still mostly default Laravel README |
 
 ## 2. Admin / Filament
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 2.1 | Filament installed | Not Started | Missing |
-| 2.2 | Admin authentication configured | Not Started | Missing |
-| 2.3 | `app/Filament` structure created | Not Started | Missing |
-| 2.4 | "K-Agent Settings" page/resource exists | Not Started | Missing |
+| 2.1 | Filament installed | Done | `filament/filament` is installed in Composer |
+| 2.2 | Admin authentication configured | Done | Admin panel uses Filament auth middleware and custom login page |
+| 2.3 | `app/Filament` structure created | Done | Resources, widgets, auth page, and panel provider exist |
+| 2.4 | "K-Agent Settings" page/resource exists | Done | `AgentResource` provides tenant-scoped agent settings |
+| 2.5 | Dashboard home page with reports/cards/client tables exists | In Progress | Dashboard loads with setup, stats, trends, workspace, recent chats, recent leads, and workspace user widgets; richer reporting and deeper client management are still incomplete |
+| 2.6 | Leads dashboard section with tables/statistics exists | In Progress | `LeadResource` exists with tenant-scoped table/filter/edit support and dashboard widgets surface recent lead activity, but export and deeper reporting remain incomplete |
+| 2.7 | Chat logs section with full conversation viewer exists | Done | `ChatSessionResource` includes session list, transcript viewer, and transcript download |
+| 2.8 | Agent management section exists | In Progress | Agent/company settings, branding uploads, and provider credential management exist, but future agent features and activity logs are still missing |
+| 2.9 | Company profile settings page exists | Done | Distinct profile view/edit flow exists under General Settings |
+| 2.10 | Knowledge management section exists | In Progress | `KnowledgeFileResource` exists for tenant-scoped review and inspection, but add/edit/upload management flow is still limited from Filament |
+| 2.11 | Dashboard preference/settings section exists | In Progress | Light/dark mode is functioning in Filament, but dedicated preference settings UI is still missing |
 
 ## 3. Data Schema
 
@@ -60,14 +67,14 @@ Status values:
 | 5.1 | `app/Services` directory created | Done | `ChatService` added |
 | 5.2 | `AgentService` created | Done | Added for company agent config and widget token handling |
 | 5.3 | `KnowledgeIngestionService` created | Done | `KnowledgeService` now handles upload, extraction, and chunk preparation |
-| 5.4 | `EmbeddingService` created | Not Started | Missing |
-| 5.5 | `VectorStoreService` created | Not Started | Missing |
-| 5.6 | `RetrievalService` created | Not Started | Missing |
+| 5.4 | `EmbeddingService` created | Done | OpenAI embedding generation is wired into knowledge ingestion and retrieval with company-level credential support |
+| 5.5 | `VectorStoreService` created | Done | Qdrant-backed vector persistence and query flow are implemented with safe file-backed fallback |
+| 5.6 | `RetrievalService` created | Done | Retrieval is wired into chat and prefers Qdrant similarity search when configured |
 | 5.7 | `ChatService` created | Done | Session creation and message persistence implemented |
 | 5.8 | `LeadService` created | Done | Company-scoped lead storage implemented |
-| 5.9 | `GuardrailService` created | Not Started | Missing |
-| 5.10 | Controllers kept thin | Not Started | Feature controllers not built yet |
-| 5.11 | Filament contains no business logic | Not Started | Filament not built yet |
+| 5.9 | `GuardrailService` created | In Progress | Runtime fallback is wired into chat, but the guardrail remains minimal and does not yet score groundedness or log fallback events |
+| 5.10 | Controllers kept thin | In Progress | API controllers delegate core behavior to services, but formatting and some endpoint orchestration still live in controllers |
+| 5.11 | Filament contains no business logic | In Progress | Filament resources/pages are mostly UI-layer only, but widget/query composition still lives in the panel layer |
 
 ## 6. Agent Configuration
 
@@ -75,8 +82,8 @@ Status values:
 |---|---|---|---|
 | 6.1 | Agent/company settings schema implemented | Done | SaaS-oriented company fields and agent settings endpoints added |
 | 6.2 | `widget_token` generation implemented | Done | Auto-generated in `Agent` model and regeneratable via `AgentService` |
-| 6.3 | Single-company UI behavior enforced | Not Started | Spec assumption superseded by SaaS requirement; company-scoped UI still to be built |
-| 6.4 | Agent settings editable in admin | In Progress | Backend create/view/update/token-regeneration APIs are ready for Filament UI |
+| 6.3 | SaaS company ownership model implemented | Done | Users belong to an `agent_id`, policies enforce company ownership, and core records are agent-scoped |
+| 6.4 | Agent settings editable in admin | Done | `AgentResource` allows admin create/view/update for the tenant-owned agent |
 
 ## 7. Knowledge Management
 
@@ -87,7 +94,7 @@ Status values:
 | 7.3 | File storage configured | Done | Files stored per company agent on configured filesystem disk |
 | 7.4 | File metadata saved in PostgreSQL | Done | Upload metadata saved in `knowledge_files` |
 | 7.5 | Knowledge linked to `agent_id` | Done | Uploads resolve company by widget token and store `agent_id` |
-| 7.6 | Filament knowledge management UI exists | Not Started | Missing |
+| 7.6 | Filament knowledge management UI exists | Done | `KnowledgeFileResource` provides tenant-scoped knowledge file management UI |
 
 ## 8. Ingestion / Embeddings
 
@@ -95,10 +102,10 @@ Status values:
 |---|---|---|---|
 | 8.1 | Text extraction implemented | Done | TXT, CSV, JSON, and DOCX extraction added |
 | 8.2 | Chunking implemented | Done | Extracted text is chunked and stored as processing artifacts |
-| 8.3 | OpenAI embeddings integrated | Not Started | Missing |
-| 8.4 | Vector DB storage integrated | Not Started | Missing |
+| 8.3 | OpenAI embeddings integrated | Done | Knowledge ingestion generates embeddings through OpenAI using platform or company-provided credentials |
+| 8.4 | Vector DB storage integrated | Done | Qdrant integration is implemented for vector upsert and query, with local file fallback when unavailable |
 | 8.5 | Ingestion status tracking exists | Done | Knowledge files transition through pending, processing, ready, failed |
-| 8.6 | Embeddings stored outside PostgreSQL | Not Started | Missing |
+| 8.6 | Embeddings stored outside PostgreSQL | Done | Embeddings are stored in Qdrant when configured and otherwise persisted as filesystem artifacts rather than PostgreSQL rows |
 
 ## 9. Chat Backend
 
@@ -116,17 +123,17 @@ Status values:
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 10.1 | Agent resolved by `widget_token` | Done | Base agent lookup implemented in `ChatService` |
-| 10.2 | Retrieval from vector DB implemented | Not Started | Missing |
-| 10.3 | OpenAI chat integration implemented | Not Started | Missing |
-| 10.4 | Prompt constrained to company data | Not Started | Missing |
-| 10.5 | Responses grounded in retrieved context | Not Started | Missing |
+| 10.2 | Retrieval from vector DB implemented | Done | Chat retrieval can query Qdrant by company-scoped embeddings |
+| 10.3 | OpenAI chat integration implemented | Done | Assistant response generation is connected end-to-end with OpenAI and fallback handling |
+| 10.4 | Prompt constrained to company data | In Progress | Prompt builder uses company identity and retrieved company context, but constraint quality still needs hardening and broader evaluation |
+| 10.5 | Responses grounded in retrieved context | In Progress | Retrieved chunks are included in prompt construction and empty-context requests fall back, but groundedness quality still needs stronger evaluation and enforcement |
 
 ## 11. Guardrails
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 11.1 | Insufficient-knowledge detection exists | Not Started | Missing |
-| 11.2 | Fallback response defined | Not Started | Missing |
+| 11.1 | Insufficient-knowledge detection exists | In Progress | Runtime falls back when no relevant context is retrieved, but detection is still a simple empty-context check |
+| 11.2 | Fallback response defined | Done | Agent/company fallback message fields exist and are used in runtime when context or provider execution fails |
 | 11.3 | Fallback queries logged | Not Started | Missing |
 | 11.4 | Hallucination-risk behavior handled | Not Started | Missing |
 
@@ -139,16 +146,18 @@ Status values:
 | 12.3 | Lead validation implemented | Done | Form request validation added |
 | 12.4 | Leads stored in DB | Done | Leads now persist via `LeadService` |
 | 12.5 | Leads linked to session and agent | Done | Lead storage is agent-scoped and session-aware |
-| 12.6 | Lead admin UI exists | Not Started | Missing |
+| 12.6 | Lead admin UI exists | Done | `LeadResource` provides tenant-scoped lead management UI |
 | 12.7 | Lead export works | Not Started | Missing |
 
 ## 13. Chat Logs
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 13.1 | Chat sessions visible in admin | Not Started | Missing |
-| 13.2 | Full conversation logs view exists | Not Started | Missing |
-| 13.3 | Lead-to-session linking visible in UI | Not Started | Missing |
+| 13.1 | Chat sessions visible in admin | Done | `ChatSessionResource` lists tenant-scoped chat sessions |
+| 13.2 | Full conversation logs view exists | Done | Session infolist renders the message transcript |
+| 13.3 | Lead-to-session linking visible in UI | In Progress | Lead and session resources expose session/leads counts, but richer cross-linking is still limited |
+| 13.4 | Transcript download/export works | Done | Transcript download route and controller are wired |
+| 13.5 | Conversation quality/rating indicator exists | Not Started | Average/good/etc. status still to be designed |
 
 ## 14. Widget
 
@@ -174,28 +183,41 @@ Status values:
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 16.1 | OpenAI env config added | Not Started | Not verified |
-| 16.2 | Vector DB env/config added | Not Started | Not verified |
-| 16.3 | Service config updated for APIs | Not Started | Missing |
+| 16.1 | OpenAI env config added | Done | Platform-level OpenAI config exists in `.env`/`services.php`, with per-company override support |
+| 16.2 | Vector DB env/config added | Done | Qdrant config exists in `.env`/`services.php`, with per-company override support |
+| 16.3 | Service config updated for APIs | Done | Runtime services now resolve effective provider config per company with platform fallback |
 
 ## 17. Reliability
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| 17.1 | OpenAI failures handled safely | Not Started | Missing |
-| 17.2 | Vector DB failures handled safely | Not Started | Missing |
-| 17.3 | Validation/error response format defined | In Progress | Form request validation added for chat endpoints |
+| 17.1 | OpenAI failures handled safely | In Progress | Chat runtime catches provider errors and falls back safely, but broader retry/logging/observability policy is still missing |
+| 17.2 | Vector DB failures handled safely | In Progress | Retrieval and vector upsert paths fall back to local/file-backed behavior when Qdrant is unavailable, but richer resilience and monitoring are still missing |
+| 17.3 | Validation/error response format defined | In Progress | Form request validation exists across current APIs, but a unified platform-wide error contract is not documented |
 | 17.4 | Logs added for chat, lead, ingestion, fallback | Not Started | Missing |
+
+## 17A. Dashboard Scope Notes
+
+- All dashboard sections must be company-scoped. A company must only see its own leads, chats, knowledge, reports, agent data, and performance data.
+- Planned main dashboard sections:
+  - Home: reports, summary cards, and client/user tables
+  - Leads: tables, statistics, filters, and later export
+  - Chat Logs: full chat viewer, transcript download, and later conversation quality status
+  - Agent: rename agent, edit starting/welcome message, add future agent features, and show activity logs
+  - Profile Settings: company-owned basic profile/business information
+  - Knowledge: uploaded knowledge records in a detailed organized table with add/edit flow
+  - Dashboard Settings: light/dark mode and basic dashboard preferences
+- Dashboard UI should be built in Filament only. Business logic must remain in Services.
 
 ## 18. Testing
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 18.1 | Unit tests for services | Not Started | Missing |
-| 18.2 | Feature tests for chat endpoints | In Progress | Added, but local run is blocked by missing PDO SQLite driver in PHP |
+| 18.2 | Feature tests for chat endpoints | Done | Added and passing locally |
 | 18.3 | Feature tests for lead flow | Done | Added and passing |
 | 18.4 | Feature tests for knowledge upload | Done | Upload and processing coverage added and passing |
-| 18.5 | Default example tests replaced or expanded | Done | Default example tests replaced with chat API tests |
+| 18.5 | Default example tests replaced or expanded | Done | Feature coverage now includes admin/Filament, agent, chat, lead, and knowledge flows |
 
 ## 19. Deployment
 
@@ -205,3 +227,20 @@ Status values:
 | 19.2 | Production env checklist prepared | Not Started | Missing |
 | 19.3 | Queue/worker plan defined | Not Started | Missing |
 | 19.4 | Reverb production strategy defined | Not Started | Missing |
+
+## 20. SaaS Status Snapshot
+
+- Current stage: backend foundation for a SaaS platform, not a production-ready SaaS platform.
+- Implemented:
+  - Multi-tenant ownership around `agent_id`
+  - Authenticated company agent settings APIs
+  - Company-scoped chat, lead, and knowledge ingestion APIs
+  - OpenAI-backed responses, embeddings, and retrieval with Qdrant or file-backed fallback
+  - Working Filament admin panel with custom login, dashboard widgets, and tenant-scoped resources/pages
+  - General Settings sidebar flow and profile view/edit pages
+  - Passing feature tests for admin/Filament, agent, chat, lead, and knowledge flows
+- Missing for SaaS readiness:
+  - Billing/subscription model
+  - Widget frontend
+  - Realtime streaming
+  - Deployment and production operations plan

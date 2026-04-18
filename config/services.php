@@ -35,4 +35,26 @@ return [
         ],
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'chat_model' => env('OPENAI_CHAT_MODEL'),
+        'embedding_model' => env('OPENAI_EMBEDDING_MODEL'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+    ],
+
+    'qdrant' => [
+        'url' => env('QDRANT_URL'),
+        'api_key' => env('QDRANT_API_KEY'),
+        'collection' => env('QDRANT_COLLECTION', 'k_agent_knowledge'),
+        'timeout' => (int) env('QDRANT_TIMEOUT', 15),
+        'distance' => env('QDRANT_DISTANCE', 'Cosine'),
+    ],
+
+    'rag' => [
+        'top_k' => (int) env('RAG_TOP_K', 5),
+        'min_keyword_score' => (int) env('RAG_MIN_KEYWORD_SCORE', 1),
+        'max_history_messages' => (int) env('RAG_MAX_HISTORY_MESSAGES', 8),
+    ],
+
 ];

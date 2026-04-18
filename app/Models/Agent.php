@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Agent extends Model
@@ -18,6 +19,10 @@ class Agent extends Model
         'website_url',
         'industry',
         'company_description',
+        'logo_path',
+        'login_logo_path',
+        'light_logo_path',
+        'dark_logo_path',
         'widget_token',
         'contact_email',
         'support_email',
@@ -68,5 +73,46 @@ class Agent extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (blank($this->logo_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->logo_path);
+    }
+
+    public function getLoginLogoUrlAttribute(): ?string
+    {
+        if (blank($this->login_logo_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->login_logo_path);
+    }
+
+    public function getLightLogoUrlAttribute(): ?string
+    {
+        if (blank($this->light_logo_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->light_logo_path);
+    }
+
+    public function getDarkLogoUrlAttribute(): ?string
+    {
+        if (blank($this->dark_logo_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->dark_logo_path);
     }
 }

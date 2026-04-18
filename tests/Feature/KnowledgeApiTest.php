@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\KnowledgeFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -126,6 +127,68 @@ class KnowledgeApiTest extends TestCase
 
         Storage::disk('local')->assertExists($knowledgeFile->meta['processed_text_path']);
         Storage::disk('local')->assertExists($knowledgeFile->meta['processed_chunks_path']);
+    }
+
+    public function test_it_stores_embeddings_in_qdrant_when_configured(): void
+    {
+        Storage::fake('local');
+
+        Http::fake([
+            'https://api.openai.com/v1/embeddings' => Http::response([
+                'data' => [
+                    ['index' => 0, 'embedding' => [0.1, 0.2, 0.3]],
+                    ['index' => 1, 'embedding' => [0.2, 0.3, 0.4]],
+                    ['index' => 2, 'embedding' => [0.3, 0.4, 0.5]],
+                    ['index' => 3, 'embedding' => [0.4, 0.5, 0.6]],
+                ],
+            ]),
+            'http://qdrant.test/collections/k_agent_test' => Http::sequence()
+                ->push([], 404)
+                ->push(['result' => ['status' => 'green']], 200),
+            'http://qdrant.test/collections/k_agent_test/points' => Http::response([
+                'result' => ['status' => 'acknowledged'],
+            ]),
+        ]);
+
+        config()->set('services.openai.api_key', 'test-key');
+        config()->set('services.openai.embedding_model', 'text-embedding-3-small');
+        config()->set('services.openai.base_url', 'https://api.openai.com/v1');
+        config()->set('services.qdrant.url', 'http://qdrant.test');
+        config()->set('services.qdrant.collection', 'k_agent_test');
+
+        $agent = Agent::query()->create([
+            'name' => 'Knowledge Agent',
+            'company_name' => 'Acme',
+            'widget_token' => 'acme-widget-token',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent(
+            'faq.txt',
+            str_repeat('Acme pricing and onboarding details. ', 80)
+        );
+
+        $uploadResponse = $this->postJson('/api/knowledge/upload', [
+            'widget_token' => $agent->widget_token,
+            'file' => $file,
+        ]);
+
+        $knowledgeFileId = $uploadResponse->json('data.id');
+
+        $response = $this->postJson("/api/knowledge/{$knowledgeFileId}/process", [
+            'widget_token' => $agent->widget_token,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.status', 'ready');
+
+        $knowledgeFile = KnowledgeFile::query()->findOrFail($knowledgeFileId);
+
+        $this->assertSame('qdrant', $knowledgeFile->meta['vector_backend']);
+        $this->assertSame('k_agent_test', $knowledgeFile->meta['vector_collection']);
+        $this->assertNotEmpty($knowledgeFile->meta['vector_point_ids']);
+        Storage::disk('local')->assertExists($knowledgeFile->meta['embeddings_path']);
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://qdrant.test/collections/k_agent_test/points');
     }
 
     public function test_it_rejects_processing_a_knowledge_file_for_another_agent(): void

@@ -30,7 +30,7 @@ class ChatController extends Controller
 
     public function sendMessage(SendChatMessageRequest $request): JsonResponse
     {
-        [$chatSession, $message] = $this->chatService->storeVisitorMessage($request->validated());
+        [$chatSession, $message, $assistantMessage] = $this->chatService->storeVisitorMessage($request->validated());
 
         return response()->json([
             'data' => [
@@ -38,6 +38,12 @@ class ChatController extends Controller
                 'message_id' => $message->public_id,
                 'role' => $message->role,
                 'content' => $message->content,
+                'assistant_message' => [
+                    'message_id' => $assistantMessage->public_id,
+                    'role' => $assistantMessage->role,
+                    'content' => $assistantMessage->content,
+                    'created_at' => $assistantMessage->created_at?->toISOString(),
+                ],
                 'created_at' => $message->created_at?->toISOString(),
             ],
         ], 201);

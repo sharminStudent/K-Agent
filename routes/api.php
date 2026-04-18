@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\LeadController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('agents')->group(function (): void {
+Route::middleware('auth')->prefix('agents')->group(function (): void {
     Route::post('/', [AgentController::class, 'store']);
     Route::get('/{agent}', [AgentController::class, 'show']);
     Route::put('/{agent}', [AgentController::class, 'update']);

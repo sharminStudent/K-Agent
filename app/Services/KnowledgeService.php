@@ -14,6 +14,8 @@ class KnowledgeService
 {
     public function __construct(
         protected AgentService $agentService,
+        protected EmbeddingService $embeddingService,
+        protected VectorStoreService $vectorStoreService,
     ) {
     }
 
@@ -24,15 +26,16 @@ class KnowledgeService
         $directory = 'knowledge-files/'.$agent->id;
         $filename = Str::uuid()->toString().'-'.$uploadedFile->getClientOriginalName();
         $path = $uploadedFile->storeAs($directory, $filename, $disk);
+        $storedSize = Storage::disk($disk)->size($path);
 
-        return DB::transaction(function () use ($agent, $uploadedFile, $path, $disk, $data): KnowledgeFile {
+        return DB::transaction(function () use ($agent, $uploadedFile, $path, $disk, $data, $storedSize): KnowledgeFile {
             return KnowledgeFile::query()->create([
                 'agent_id' => $agent->id,
                 'disk' => $disk,
                 'path' => $path,
                 'original_name' => $uploadedFile->getClientOriginalName(),
                 'mime_type' => $uploadedFile->getClientMimeType(),
-                'size' => $uploadedFile->getSize(),
+                'size' => $storedSize,
                 'status' => 'pending',
                 'meta' => array_merge($data['meta'] ?? [], [
                     'uploaded_extension' => $uploadedFile->getClientOriginalExtension(),
@@ -49,7 +52,7 @@ class KnowledgeService
             throw new ModelNotFoundException('Knowledge file not found for the provided widget token.');
         }
 
-        return DB::transaction(function () use ($knowledgeFile): KnowledgeFile {
+        return DB::transaction(function () use ($knowledgeFile, $agent): KnowledgeFile {
             $knowledgeFile->forceFill([
                 'status' => 'processing',
             ])->save();
@@ -58,6 +61,7 @@ class KnowledgeService
                 $text = $this->extractText($knowledgeFile);
                 $chunks = $this->chunkText($text);
                 $this->storeProcessingArtifacts($knowledgeFile, $text, $chunks);
+                $this->storeEmbeddings($knowledgeFile, $chunks, $agent);
 
                 $knowledgeFile->forceFill([
                     'status' => 'ready',
@@ -83,18 +87,70 @@ class KnowledgeService
         });
     }
 
+    /**
+     * @param  array<int, array<string, mixed>>  $chunks
+     */
+    protected function storeEmbeddings(KnowledgeFile $knowledgeFile, array $chunks, \App\Models\Agent $agent): void
+    {
+        if (! $this->embeddingService->isConfigured($agent)) {
+            $knowledgeFile->forceFill([
+                'meta' => array_merge($knowledgeFile->meta ?? [], [
+                    'embeddings_status' => 'skipped',
+                    'embeddings_path' => null,
+                    'vector_backend' => null,
+                    'vector_collection' => null,
+                    'vector_point_ids' => [],
+                ]),
+            ])->save();
+
+            return;
+        }
+
+        $embeddings = $this->embeddingService->embedMany(array_column($chunks, 'content'), $agent);
+        $stored = $this->vectorStoreService->storeKnowledgeEmbeddings($knowledgeFile, $chunks, $embeddings);
+
+        $knowledgeFile->forceFill([
+            'meta' => array_merge($knowledgeFile->meta ?? [], [
+                'embeddings_status' => 'ready',
+                'embeddings_path' => $stored['path'],
+                'embedding_count' => $stored['count'],
+                'vector_backend' => $stored['backend'],
+                'vector_collection' => $stored['collection'],
+                'vector_point_ids' => $stored['point_ids'],
+            ]),
+        ])->save();
+    }
+
     protected function extractText(KnowledgeFile $knowledgeFile): string
     {
         $disk = Storage::disk($knowledgeFile->disk);
         $raw = $disk->get($knowledgeFile->path);
+        $mimeType = (string) $knowledgeFile->mime_type;
+        $extension = mb_strtolower((string) ($knowledgeFile->meta['uploaded_extension'] ?? pathinfo($knowledgeFile->original_name, PATHINFO_EXTENSION)));
 
-        return match ($knowledgeFile->mime_type) {
-            'text/plain' => trim($raw),
-            'text/csv' => $this->extractCsvText($raw),
-            'application/json' => $this->extractJsonText($raw),
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => $this->extractDocxText($disk->path($knowledgeFile->path)),
-            default => throw new \RuntimeException('Text extraction is not supported yet for this file type.'),
-        };
+        if ($mimeType === 'text/csv' || $extension === 'csv') {
+            return $this->extractCsvText($raw);
+        }
+
+        if ($mimeType === 'application/json' || $extension === 'json') {
+            return $this->extractJsonText($raw);
+        }
+
+        if (
+            $mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            || in_array($extension, ['docx'], true)
+        ) {
+            return $this->extractDocxText($disk->path($knowledgeFile->path));
+        }
+
+        if (
+            str_starts_with($mimeType, 'text/')
+            || in_array($extension, ['txt', 'md', 'log', 'text'], true)
+        ) {
+            return trim($raw);
+        }
+
+        throw new \RuntimeException('Text extraction is not supported yet for this file type.');
     }
 
     /**

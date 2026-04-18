@@ -13,12 +13,15 @@ class AgentController extends Controller
 {
     public function __construct(
         protected AgentService $agentService,
+        protected \App\Services\AgentProviderConfigService $agentProviderConfigService,
     ) {
     }
 
     public function store(StoreAgentRequest $request): JsonResponse
     {
-        $agent = $this->agentService->createAgent($request->validated());
+        $this->authorize('create', Agent::class);
+
+        $agent = $this->agentService->createAgent($request->validated(), $request->user());
 
         return response()->json([
             'data' => $this->formatAgent($agent),
@@ -27,6 +30,8 @@ class AgentController extends Controller
 
     public function show(Agent $agent): JsonResponse
     {
+        $this->authorize('view', $agent);
+
         return response()->json([
             'data' => $this->formatAgent($agent),
         ]);
@@ -34,6 +39,8 @@ class AgentController extends Controller
 
     public function update(UpdateAgentRequest $request, Agent $agent): JsonResponse
     {
+        $this->authorize('update', $agent);
+
         $agent = $this->agentService->updateAgent($agent, $request->validated());
 
         return response()->json([
@@ -43,6 +50,8 @@ class AgentController extends Controller
 
     public function regenerateWidgetToken(Agent $agent): JsonResponse
     {
+        $this->authorize('regenerateWidgetToken', $agent);
+
         $agent = $this->agentService->regenerateWidgetToken($agent);
 
         return response()->json([
@@ -55,6 +64,9 @@ class AgentController extends Controller
      */
     protected function formatAgent(Agent $agent): array
     {
+        $settings = $agent->settings ?? [];
+        unset($settings['provider_credentials']);
+
         return [
             'id' => $agent->id,
             'name' => $agent->name,
@@ -63,6 +75,8 @@ class AgentController extends Controller
             'website_url' => $agent->website_url,
             'industry' => $agent->industry,
             'company_description' => $agent->company_description,
+            'logo_path' => $agent->logo_path,
+            'logo_url' => $agent->logo_url,
             'widget_token' => $agent->widget_token,
             'contact_email' => $agent->contact_email,
             'support_email' => $agent->support_email,
@@ -70,7 +84,8 @@ class AgentController extends Controller
             'system_prompt' => $agent->system_prompt,
             'welcome_message' => $agent->welcome_message,
             'fallback_message' => $agent->fallback_message,
-            'settings' => $agent->settings,
+            'settings' => $settings,
+            'provider_settings' => $this->agentProviderConfigService->sanitizedProviderSettings($agent),
             'is_active' => $agent->is_active,
             'created_at' => $agent->created_at?->toISOString(),
             'updated_at' => $agent->updated_at?->toISOString(),
