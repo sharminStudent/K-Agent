@@ -90,7 +90,7 @@ RAG remains the primary knowledge mechanism for the widget.
 
 GitHub CD is configured in `.github/workflows/deploy-railway.yml`.
 
-Deployment runs when the `Tests` workflow succeeds on `master`, and it can also be run manually from GitHub Actions. The workflow uses the Railway CLI with `railway up --ci`.
+Deployment runs when the `Tests` workflow succeeds on `main` or `master`, and it can also be run manually from GitHub Actions. The workflow uses the Railway CLI with `railway up --ci`.
 
 Required GitHub Actions secret:
 
@@ -102,10 +102,13 @@ Optional GitHub Actions secrets:
 - `RAILWAY_ENVIRONMENT`
 - `RAILWAY_PROJECT_ID`
 
-Railway deploy behavior is configured in `railway.json`, including the `/up` healthcheck and `php artisan migrate --force` as the pre-deploy command.
+Railway deploy behavior is configured in `railway.json`, including the `/up` healthcheck and the pre-deploy commands for migrations and optional seeded demo content.
+
+For production environment values and first-launch recommendations, see [`RAILWAY_DEPLOYMENT.md`](RAILWAY_DEPLOYMENT.md) and start from [`.env.railway.example`](.env.railway.example).
 
 ## Notes
 
 - OpenAI chat model should be configured with a valid model id such as `gpt-5.3-chat-latest`
 - Widget goodbye intents now return a thank-you message and auto-close without calling OpenAI
 - PDF upload is accepted in the UI, but current text extraction support is implemented for TXT, CSV, JSON, and DOCX
+- For a simpler first launch on Railway, you can keep `BROADCAST_CONNECTION=null` and `QUEUE_CONNECTION=sync`
