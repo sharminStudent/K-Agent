@@ -1,15 +1,12 @@
 <?php
 
 use App\Http\Controllers\Filament\TranscriptDownloadController;
-use App\Http\Controllers\ShowcaseController;
 use App\Http\Controllers\WidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/dummy-client/{slug}', [ShowcaseController::class, 'showDummyClientSite'])->name('dummy-client.show');
 
 Route::prefix('widget/{widgetToken}')->group(function (): void {
     Route::get('/embed.js', [WidgetController::class, 'script'])->name('widget.script');

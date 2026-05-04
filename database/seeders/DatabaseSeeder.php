@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        if (filter_var((string) env('SEED_DEMO_CONTENT', false), FILTER_VALIDATE_BOOL)) {
-            $this->call(DummyClientDemoSeeder::class);
+        if (filter_var((string) env('SEED_CLIENT_WORKSPACES', false), FILTER_VALIDATE_BOOL)) {
+            $this->call(ClientWorkspaceSeeder::class);
         }
     }
 }

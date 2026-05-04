@@ -112,3 +112,4 @@ For production environment values and first-launch recommendations, see [`RAILWA
 - Widget goodbye intents now return a thank-you message and auto-close without calling OpenAI
 - PDF upload is accepted in the UI, but current text extraction support is implemented for TXT, CSV, JSON, and DOCX
 - For a simpler first launch on Railway, you can keep `BROADCAST_CONNECTION=null` and `QUEUE_CONNECTION=sync`
+- If you want seeded dashboard clients on first deploy, set `SEED_CLIENT_WORKSPACES=true`

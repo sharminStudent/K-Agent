@@ -28,7 +28,7 @@ Minimum required variables:
 
 Recommended first-launch values:
 
-- `SEED_DEMO_CONTENT=true` if you want the demo academy page created automatically
+- `SEED_CLIENT_WORKSPACES=true` if you want the two dashboard client workspaces created automatically
 - `APP_ENV=production`
 - `APP_DEBUG=false`
 - `SESSION_DRIVER=database`
@@ -53,8 +53,8 @@ Current deploy config in `railway.json`:
 
 The seeder is safe for production because:
 
-- the base `DatabaseSeeder` only creates demo content when `SEED_DEMO_CONTENT=true`
-- the dummy client seeder uses `updateOrCreate`, so it is idempotent
+- the base `DatabaseSeeder` only creates client workspaces when `SEED_CLIENT_WORKSPACES=true`
+- the client workspace seeder is idempotent and removes the old public demo tenant
 - no generic production test user is created unless the app is running locally
 
 ## 4. First live smoke checks
@@ -65,16 +65,19 @@ After the first deploy, verify:
 2. `GET /admin/login` loads
 3. widget preview loads:
    `https://your-domain/widget/{widget_token}/preview`
-4. dummy client page loads:
-   `https://your-domain/dummy-client/{agent-slug}`
+4. widget preview loads for each seeded client:
+   `https://your-domain/widget/{widget_token}/preview`
 5. sending a chat message returns an assistant reply
 
-If `SEED_DEMO_CONTENT=true`, the built-in demo tenant will be:
+If `SEED_CLIENT_WORKSPACES=true`, the built-in dashboard clients will be:
 
-- dummy page:
-  `https://your-domain/dummy-client/brightpath-academy`
-- widget preview:
-  `https://your-domain/widget/brightpath-academy-widget-demo-token-2026/preview`
+- `Klabs Tech`
+- `Northstar Learning`
+
+Their widget previews will be:
+
+- `https://your-domain/widget/BDZdb5u9Rsv2tp2fGxV83ykFPgeqrLqteKCqCQ54/preview`
+- `https://your-domain/widget/zqMqmzWo2V9c9rIwdthD8xTgEDjPfsGYKiNG4Aze/preview`
 
 ## 5. Optional later upgrades
 
