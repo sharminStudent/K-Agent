@@ -141,9 +141,6 @@ class AgentProviderConfigService
         ];
     }
 
-    /**
-     * @param  mixed  $value
-     */
     protected function resolveSecretValue(mixed $value, ?string $existing): ?string
     {
         if ($value === '__keep__') {
@@ -163,9 +160,6 @@ class AgentProviderConfigService
         return Crypt::encryptString($trimmed);
     }
 
-    /**
-     * @param  mixed  $value
-     */
     protected function resolveNullableString(mixed $value): ?string
     {
         if (! is_string($value)) {
@@ -177,9 +171,6 @@ class AgentProviderConfigService
         return $trimmed === '' ? null : $trimmed;
     }
 
-    /**
-     * @param  mixed  $value
-     */
     protected function resolveNullableInt(mixed $value): ?int
     {
         if ($value === null || $value === '') {
@@ -189,9 +180,6 @@ class AgentProviderConfigService
         return (int) $value;
     }
 
-    /**
-     * @param  mixed  $inputValue
-     */
     protected function hasSecret(mixed $inputValue, ?string $existing): bool
     {
         if ($inputValue === '__keep__') {

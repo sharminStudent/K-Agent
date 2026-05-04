@@ -9,8 +9,7 @@ class EmbeddingService
 {
     public function __construct(
         protected AgentProviderConfigService $agentProviderConfigService,
-    ) {
-    }
+    ) {}
 
     public function isConfigured(?Agent $agent = null): bool
     {

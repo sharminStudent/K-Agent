@@ -19,8 +19,11 @@ class WidgetAssistantMessageCreated implements ShouldBroadcastNow
     public function __construct(
         public ChatSession $chatSession,
         public ChatMessage $assistantMessage,
-    ) {
-    }
+        public ?string $streamedContent = null,
+        public int $chunkIndex = 0,
+        public int $chunkCount = 1,
+        public bool $isFinalChunk = true,
+    ) {}
 
     public function broadcastOn(): array
     {
@@ -37,13 +40,22 @@ class WidgetAssistantMessageCreated implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
+        $streamedContent = $this->streamedContent ?? $this->assistantMessage->content;
+
         return [
             'session_id' => $this->chatSession->public_id,
             'assistant_message' => [
                 'message_id' => $this->assistantMessage->public_id,
                 'role' => $this->assistantMessage->role,
-                'content' => $this->assistantMessage->content,
+                'content' => $streamedContent,
                 'created_at' => $this->assistantMessage->created_at?->toISOString(),
+                'meta' => array_merge($this->assistantMessage->meta ?? [], [
+                    'stream' => [
+                        'chunk_index' => $this->chunkIndex,
+                        'chunk_count' => $this->chunkCount,
+                        'is_final' => $this->isFinalChunk,
+                    ],
+                ]),
             ],
         ];
     }

@@ -22,7 +22,7 @@ Route::prefix('lead')->group(function (): void {
     Route::post('/store', [LeadController::class, 'store']);
 });
 
-Route::prefix('knowledge')->group(function (): void {
+Route::middleware('auth')->prefix('knowledge')->group(function (): void {
     Route::post('/upload', [KnowledgeController::class, 'store']);
     Route::post('/{knowledgeFile}/process', [KnowledgeController::class, 'process']);
 });

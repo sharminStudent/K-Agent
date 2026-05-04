@@ -7,6 +7,11 @@ use App\Models\User;
 
 class LeadPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isSuperAdmin() ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return true;

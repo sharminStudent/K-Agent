@@ -46,7 +46,7 @@ return [
     'qdrant' => [
         'url' => env('QDRANT_URL'),
         'api_key' => env('QDRANT_API_KEY'),
-        'collection' => env('QDRANT_COLLECTION', 'k_agent_knowledge'),
+        'collection' => env('QDRANT_COLLECTION', 'agent_knowledge'),
         'timeout' => (int) env('QDRANT_TIMEOUT', 15),
         'distance' => env('QDRANT_DISTANCE', 'Cosine'),
     ],
@@ -55,6 +55,16 @@ return [
         'top_k' => (int) env('RAG_TOP_K', 5),
         'min_keyword_score' => (int) env('RAG_MIN_KEYWORD_SCORE', 1),
         'max_history_messages' => (int) env('RAG_MAX_HISTORY_MESSAGES', 8),
+    ],
+
+    'widget' => [
+        'chat_idle_timeout_minutes' => (int) env('WIDGET_CHAT_IDLE_TIMEOUT_MINUTES', 30),
+    ],
+
+    'assistant' => [
+        'instructions_path' => resource_path('prompts/assistant-runtime-instructions.md'),
+        'model_routing_enabled' => env('ASSISTANT_MODEL_ROUTING_ENABLED', true),
+        'model_guardrails_enabled' => env('ASSISTANT_MODEL_GUARDRAILS_ENABLED', true),
     ],
 
 ];

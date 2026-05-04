@@ -3,41 +3,18 @@
         widgetToken: @js($agent->widget_token),
         agentName: @js($agent->name),
         companyName: @js($agent->company_name),
-        welcomeMessage: @js($agent->welcome_message ?: 'Hi there,\nHow may I help you?'),
+        welcomeMessage: @js($agent->welcome_message),
         fallbackMessage: @js($agent->fallback_message ?: 'I do not have enough information to answer that yet.'),
         createSessionUrl: @js(url('/api/chat/session')),
         sendMessageUrl: @js(url('/api/chat/send-message')),
         storeLeadUrl: @js(url('/api/lead/store')),
         bootstrapUrl: @js($bootstrapUrl),
+        helpUrl: @js($helpUrl),
+        helpArticleBaseUrl: @js($helpArticleBaseUrl),
         lightLogoUrl: @js($lightLogoUrl),
         darkLogoUrl: @js($darkLogoUrl),
-        reverbEnabled: @js(filled(config('broadcasting.connections.reverb.key'))),
-        helpTopics: @js([
-            [
-                'id' => 'services',
-                'title' => 'Our Services',
-                'excerpt' => 'Overview of what K-Labs can build and support.',
-                'content' => 'K-Labs works on business websites, custom software, AI-assisted tools, internal systems, dashboards, and product delivery support.',
-            ],
-            [
-                'id' => 'process',
-                'title' => 'How We Work',
-                'excerpt' => 'What the process looks like from inquiry to delivery.',
-                'content' => 'Projects usually start with requirements, planning, and scope review. Then we move into design, implementation, review rounds, QA, and launch support.',
-            ],
-            [
-                'id' => 'pricing',
-                'title' => 'Pricing and Quotes',
-                'excerpt' => 'How to get a quote and what affects pricing.',
-                'content' => 'Pricing depends on project scope, timeline, integrations, and complexity. The fastest way to get a quote is to share your requirements in the chat and leave your email.',
-            ],
-            [
-                'id' => 'support',
-                'title' => 'Support and Contact',
-                'excerpt' => 'How to continue the conversation with the team.',
-                'content' => 'You can use this chat to ask questions, share project details, and leave your contact information. A team member can follow up with you directly.',
-            ],
-        ]),
+        privacyUrl: @js($agent->settings['privacy_url'] ?? $agent->website_url),
+        reverbEnabled: @js(config('broadcasting.default') === 'reverb' && filled(config('broadcasting.connections.reverb.key'))),
     })"
     x-init="init()"
     class="ka-widget"
@@ -79,6 +56,12 @@
         .ka-typing span:nth-child(2){animation-delay:.15s}
         .ka-typing span:nth-child(3){animation-delay:.3s}
         .ka-help-list,.ka-help-detail,.ka-archive-list{display:grid;gap:10px}
+        .ka-help-search{display:flex;gap:8px;margin-bottom:12px}
+        .ka-help-search input{width:100%;height:36px;border:1px solid var(--ka-border);border-radius:12px;background:var(--ka-header-bg);color:var(--ka-body-text);font:inherit;font-size:12px;padding:0 11px;outline:0;transition:border-color 180ms ease,box-shadow 180ms ease}
+        .ka-help-search input:focus{border-color:#f3f4f6;box-shadow:0 0 0 3px rgba(255,255,255,.10)}
+        .ka-shell[data-theme='light'] .ka-help-search input:focus{border-color:#5f6b7a;box-shadow:0 0 0 3px rgba(59,130,246,.10)}
+        .ka-help-search button{height:36px;padding:0 12px;border:1px solid var(--ka-border);border-radius:12px;background:var(--ka-header-bg);color:var(--ka-body-text);font:inherit;font-size:12px;cursor:pointer;transition:background-color 180ms ease,transform 180ms ease}
+        .ka-help-search button:hover{background:var(--ka-menu-hover);transform:translateY(-1px)}
         .ka-help-card,.ka-help-back{width:100%;padding:12px;border:1px solid var(--ka-border);border-radius:14px;background:var(--ka-header-bg);color:var(--ka-body-text);font:inherit;text-align:left;cursor:pointer;transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease}
         .ka-help-card h3,.ka-help-detail h3{margin:0 0 6px;font-size:13px}
         .ka-help-card p,.ka-help-detail p{margin:0;font-size:11px;line-height:1.5;color:var(--ka-meta);white-space:pre-wrap}
@@ -110,10 +93,31 @@
         .ka-send[disabled],.ka-icon-btn[disabled]{opacity:.45;cursor:default}
         .ka-note{margin:4px 0 0;font-size:10px;line-height:1.2;text-align:center;color:var(--ka-note)}
         .ka-note a{color:var(--ka-note);text-decoration:underline}
+        @media (max-width: 640px){
+            .ka-shell{border-radius:14px}
+            .ka-header{padding:9px 10px 8px}
+            .ka-body{padding:10px 8px 10px}
+            .ka-msg{max-width:88%}
+            .ka-bubble{padding:10px 12px;font-size:12px;line-height:1.34}
+            .ka-help-search{gap:6px}
+            .ka-help-search input,.ka-help-search button{height:38px}
+            .ka-footer{padding:0 8px max(10px, env(safe-area-inset-bottom))}
+            .ka-compose-shell{padding:8px 9px 8px}
+            .ka-menu{right:10px;width:min(180px, calc(100vw - 28px))}
+        }
+        @media (max-width: 420px){
+            .ka-brand{max-width:calc(100% - 42px)}
+            .ka-brand img{max-width:118px;height:20px}
+            .ka-brand p{font-size:9px}
+            .ka-space-title{font-size:14px}
+            .ka-space-copy,.ka-help-card p,.ka-help-detail p,.ka-archive-copy,.ka-archive-time,.ka-empty-copy{font-size:10px}
+            .ka-help-card,.ka-archive-card{padding:11px}
+            .ka-compose textarea{font-size:12px}
+        }
         @keyframes ka-bounce{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}}
     </style>
 
-    <div class="ka-shell" :data-theme="theme">
+    <div class="ka-shell" :data-theme="theme" @keydown.escape.window="closeTransientUi()">
         <div class="ka-header">
             <div class="ka-brand">
                 <img :src="currentLogoUrl()" :alt="companyName + ' logo'">
@@ -121,7 +125,7 @@
             </div>
 
             <div class="ka-actions">
-                <button type="button" @click="menuOpen = !menuOpen" aria-label="More actions">
+                <button type="button" @click="toggleMenu()" aria-label="More actions">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                         <circle cx="3" cy="8" r="1" fill="currentColor"/>
                         <circle cx="8" cy="8" r="1" fill="currentColor"/>
@@ -187,8 +191,20 @@
             >
                 <div class="ka-space-head">
                     <h2 class="ka-space-title">Help</h2>
-                    <p class="ka-space-copy">Browse quick answers before starting a new question.</p>
+                    <p class="ka-space-copy">Search the company knowledge base before starting a new question.</p>
                 </div>
+
+                <form class="ka-help-search" @submit.prevent="searchHelp()">
+                    <input
+                        type="search"
+                        x-model="helpQuery"
+                        placeholder="Search help articles..."
+                        @input.debounce.450ms="searchHelp()"
+                    >
+                    <button type="button" x-show="helpQuery" @click="clearHelpSearch()">Clear</button>
+                </form>
+
+                <p class="ka-empty-copy" x-show="helpLoading">Loading help articles...</p>
 
                 <div class="ka-help-list" x-show="!helpArticle">
                     <template x-for="article in helpTopics" :key="article.id">
@@ -198,6 +214,8 @@
                         </button>
                     </template>
                 </div>
+
+                <p class="ka-empty-copy" x-show="!helpLoading && !helpArticle && helpTopics.length === 0">No help articles are available yet.</p>
 
                 <div class="ka-help-detail" x-cloak x-show="helpArticle">
                     <button class="ka-help-back" type="button" @click="helpArticle = null">Back to topics</button>
@@ -252,6 +270,7 @@
                         x-model="draft"
                         rows="1"
                         placeholder="Ask a question...."
+                        :disabled="sending || typing"
                         @input="autoResize($event)"
                         @keydown.enter.prevent="handleComposerEnter($event)"
                     ></textarea>
@@ -259,7 +278,7 @@
 
                 <div class="ka-toolbar">
                     <div class="ka-tools">
-                        <button class="ka-icon-btn" type="button" aria-label="Emoji" @click="toggleEmojiPicker()">
+                        <button class="ka-icon-btn" type="button" aria-label="Emoji" :disabled="sending || typing" @click="toggleEmojiPicker()">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1"/>
                                 <circle cx="5.75" cy="6.5" r=".8" fill="currentColor"/>
@@ -268,16 +287,9 @@
                             </svg>
                         </button>
 
-                        <button class="ka-icon-btn" type="button" aria-label="Voice input">
-                            <svg width="13" height="17" viewBox="0 0 13 17" fill="none" aria-hidden="true">
-                                <rect x="4" y="1" width="5" height="9" rx="2.5" stroke="currentColor" stroke-width="1"/>
-                                <path d="M2 7.5C2 10.09 3.91 12 6.5 12C9.09 12 11 10.09 11 7.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-                                <path d="M6.5 12V15.5M4.25 15.5H8.75" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-                            </svg>
-                        </button>
                     </div>
 
-                    <button class="ka-send" type="submit" :disabled="sending || !draft.trim()" aria-label="Send message">
+                    <button class="ka-send" type="submit" :disabled="sending || typing || !draft.trim()" aria-label="Send message">
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                             <path d="M9 15.25V3.25" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
                             <path d="M4.5 7.75L9 3.25L13.5 7.75" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
@@ -286,7 +298,15 @@
                 </div>
             </form>
 
-            <p class="ka-note">By chatting with us, you agree to our <a href="#" @click.prevent>privacy policy</a></p>
+            <p class="ka-note">
+                By chatting with us, you agree to our
+                <template x-if="privacyUrl">
+                    <a :href="privacyUrl" target="_blank" rel="noopener noreferrer">privacy policy</a>
+                </template>
+                <template x-if="!privacyUrl">
+                    <span>privacy policy</span>
+                </template>
+            </p>
         </div>
     </div>
 
@@ -302,11 +322,16 @@
                 sendMessageUrl: config.sendMessageUrl,
                 storeLeadUrl: config.storeLeadUrl,
                 bootstrapUrl: config.bootstrapUrl,
+                helpUrl: config.helpUrl,
+                helpArticleBaseUrl: config.helpArticleBaseUrl,
                 lightLogoUrl: config.lightLogoUrl,
                 darkLogoUrl: config.darkLogoUrl,
+                privacyUrl: config.privacyUrl,
                 reverbEnabled: config.reverbEnabled,
-                helpTopics: config.helpTopics,
-                storageKey: `k-agent-widget:${config.widgetToken}`,
+                parentOrigin: null,
+                helpTopics: [],
+                helpQuery: '',
+                storageKey: `embedded-chat-widget:${config.widgetToken}`,
                 theme: 'dark',
                 view: 'conversation',
                 menuOpen: false,
@@ -319,16 +344,53 @@
                 sessionId: null,
                 messages: [],
                 archives: [],
+                helpLoading: false,
+                helpLoaded: false,
                 helpArticle: null,
                 channelName: null,
                 seenMessageIds: new Set(),
+                renderTimers: new Map(),
+                streamedMessageIds: new Set(),
 
                 async init() {
                     const persisted = this.readState();
+                    this.parentOrigin = this.resolveParentOrigin();
                     this.theme = persisted.theme || 'dark';
                     this.archives = Array.isArray(persisted.archives) ? persisted.archives : [];
                     this.ensureWelcome();
                     this.$nextTick(() => this.scrollToBottom());
+                },
+
+                resolveParentOrigin() {
+                    if (!document.referrer) {
+                        return window.location.origin;
+                    }
+
+                    try {
+                        return new URL(document.referrer).origin;
+                    } catch {
+                        return window.location.origin;
+                    }
+                },
+
+                notifyParent(type) {
+                    window.parent.postMessage(
+                        { source: 'embedded-chat-widget', type },
+                        this.parentOrigin || window.location.origin
+                    );
+                },
+
+                closeTransientUi() {
+                    this.menuOpen = false;
+                    this.emojiOpen = false;
+                },
+
+                toggleMenu() {
+                    this.menuOpen = !this.menuOpen;
+
+                    if (this.menuOpen) {
+                        this.emojiOpen = false;
+                    }
                 },
 
                 readState() {
@@ -345,7 +407,7 @@
                 },
 
                 ensureWelcome() {
-                    if (this.messages.length > 0) return;
+                    if (this.messages.length > 0 || !this.welcomeMessage) return;
                     this.messages = [{
                         message_id: 'welcome',
                         role: 'assistant',
@@ -355,6 +417,11 @@
                 },
 
                 ensureWelcomeAtTop() {
+                    if (!this.welcomeMessage) {
+                        this.messages = this.messages.filter((message) => message.message_id !== 'welcome');
+                        return;
+                    }
+
                     const firstMessage = this.messages[0] || null;
 
                     if (firstMessage && firstMessage.message_id === 'welcome') {
@@ -420,28 +487,108 @@
                     window.Echo.channel(this.channelName)
                         .listen('.widget.assistant-message', (payload) => {
                             this.typing = false;
-                            this.appendMessage(payload.assistant_message);
+                            this.ingestAssistantMessage(payload.assistant_message);
                         });
                 },
 
                 appendMessage(message) {
                     if (!message || this.seenMessageIds.has(message.message_id)) return;
-                    this.messages.push(message);
+                    const nextMessage = { ...message };
+                    if (nextMessage.role === 'assistant') {
+                        const fullContent = nextMessage.content || '';
+                        nextMessage.content = '';
+                        this.messages.push(nextMessage);
+                        this.animateAssistantMessage(nextMessage.message_id, fullContent);
+                    } else {
+                        this.messages.push(nextMessage);
+                    }
                     this.seenMessageIds.add(message.message_id);
+                    this.scheduleAutoClose(message);
                     this.$nextTick(() => this.scrollToBottom());
+                },
+
+                ingestAssistantMessage(message) {
+                    if (!message || message.role !== 'assistant') {
+                        this.appendMessage(message);
+                        return;
+                    }
+
+                    const stream = message.meta?.stream || null;
+
+                    if (!stream) {
+                        this.appendMessage(message);
+                        return;
+                    }
+
+                    let existingMessage = this.messages.find((item) => item.message_id === message.message_id);
+
+                    if (!existingMessage) {
+                        existingMessage = {
+                            ...message,
+                            content: '',
+                        };
+                        this.messages.push(existingMessage);
+                    }
+
+                    existingMessage.role = message.role;
+                    existingMessage.created_at = message.created_at;
+                    existingMessage.meta = message.meta;
+                    existingMessage.content = existingMessage.content
+                        ? `${existingMessage.content} ${message.content}`.trim()
+                        : (message.content || '');
+
+                    if (stream.is_final) {
+                        this.seenMessageIds.add(message.message_id);
+                        this.streamedMessageIds.delete(message.message_id);
+                        this.scheduleAutoClose(existingMessage);
+                    } else {
+                        this.streamedMessageIds.add(message.message_id);
+                    }
+
+                    this.$nextTick(() => this.scrollToBottom());
+                },
+
+                animateAssistantMessage(messageId, fullContent) {
+                    if (!fullContent) return;
+
+                    if (this.renderTimers.has(messageId)) {
+                        window.clearInterval(this.renderTimers.get(messageId));
+                    }
+
+                    let index = 0;
+                    const timer = window.setInterval(() => {
+                        const message = this.messages.find((item) => item.message_id === messageId);
+
+                        if (!message) {
+                            window.clearInterval(timer);
+                            this.renderTimers.delete(messageId);
+                            return;
+                        }
+
+                        index += 3;
+                        message.content = fullContent.slice(0, index);
+                        this.$nextTick(() => this.scrollToBottom());
+
+                        if (index >= fullContent.length) {
+                            message.content = fullContent;
+                            window.clearInterval(timer);
+                            this.renderTimers.delete(messageId);
+                        }
+                    }, 18);
+
+                    this.renderTimers.set(messageId, timer);
                 },
 
                 async submitMessage() {
                     const content = this.draft.trim();
-                    if (!content || this.sending) return;
+                    if (!content || this.sending || this.typing) return;
 
                     this.error = '';
                     this.sending = true;
 
                     try {
                         this.view = 'conversation';
-                        this.menuOpen = false;
-                        this.emojiOpen = false;
+                        this.closeTransientUi();
                         await this.ensureSession();
 
                         const localId = `local-${Date.now()}`;
@@ -456,8 +603,6 @@
                         this.draft = '';
                         this.$nextTick(() => this.scrollToBottom());
 
-                        await this.captureLeadFromMessage(content);
-
                         const payload = await this.postJson(this.sendMessageUrl, {
                             widget_token: this.widgetToken,
                             session_id: this.sessionId,
@@ -467,14 +612,24 @@
                         const assistantMessage = payload.data.assistant_message;
 
                         setTimeout(() => {
+                            if (this.streamedMessageIds.has(assistantMessage.message_id)) {
+                                return;
+                            }
+
                             if (!this.seenMessageIds.has(assistantMessage.message_id)) {
                                 this.typing = false;
                                 this.appendMessage(assistantMessage);
+                            } else {
+                                this.scheduleAutoClose(assistantMessage);
                             }
                         }, 1200);
-                    } catch {
+                    } catch (error) {
                         this.typing = false;
-                        this.error = 'The message could not be sent.';
+                        this.error = error.message || 'The message could not be sent.';
+
+                        if (error.status === 422 && /expired|closed/i.test(this.error)) {
+                            this.sessionId = null;
+                        }
                     } finally {
                         this.sending = false;
                     }
@@ -500,8 +655,19 @@
                     this.sessionId = null;
                     this.messages = [];
                     this.ensureWelcome();
+                    this.closeTransientUi();
                     this.saveState();
-                    window.parent.postMessage({ source: 'k-agent-widget', type: 'close' }, '*');
+                    this.notifyParent('close');
+                },
+
+                scheduleAutoClose(message) {
+                    if (!message?.meta?.auto_close) {
+                        return;
+                    }
+
+                    window.setTimeout(() => {
+                        this.closeWidget();
+                    }, 1800);
                 },
 
                 relativeTime(value) {
@@ -521,7 +687,17 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Request failed with status ${response.status}`);
+                        let message = `Request failed with status ${response.status}`;
+
+                        try {
+                            const errorPayload = await response.json();
+                            const errors = errorPayload.errors || {};
+                            message = errorPayload.message || Object.values(errors).flat()[0] || message;
+                        } catch {}
+
+                        const error = new Error(message);
+                        error.status = response.status;
+                        throw error;
                     }
 
                     return await response.json();
@@ -575,13 +751,74 @@
                     this.view = nextView;
                     this.menuOpen = false;
 
+                    if (nextView === 'help') {
+                        await this.loadHelpTopics();
+                    }
+
                     if (nextView === 'conversation') {
                         this.$nextTick(() => this.scrollToBottom());
                     }
                 },
 
+                async loadHelpTopics(force = false) {
+                    if ((this.helpLoaded && !force) || this.helpLoading) {
+                        return;
+                    }
+
+                    this.helpLoading = true;
+
+                    try {
+                        const query = this.helpQuery.trim();
+                        const url = query ? `${this.helpUrl}?q=${encodeURIComponent(query)}` : this.helpUrl;
+                        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+                        if (!response.ok) {
+                            throw new Error(`Request failed with status ${response.status}`);
+                        }
+
+                        const payload = await response.json();
+                        this.helpTopics = Array.isArray(payload.data?.articles) ? payload.data.articles : [];
+                        this.helpLoaded = true;
+                    } catch {
+                        this.helpTopics = [];
+                    } finally {
+                        this.helpLoading = false;
+                    }
+                },
+
+                async searchHelp() {
+                    this.helpArticle = null;
+                    this.helpLoaded = false;
+                    await this.loadHelpTopics(true);
+                },
+
+                async clearHelpSearch() {
+                    this.helpQuery = '';
+                    this.helpArticle = null;
+                    this.helpLoaded = false;
+                    await this.loadHelpTopics(true);
+                },
+
                 async openHelpArticle(articleId) {
-                    this.helpArticle = this.helpTopics.find((article) => article.id === articleId) || null;
+                    this.helpLoading = true;
+
+                    try {
+                        const response = await fetch(`${this.helpArticleBaseUrl}/${articleId}`, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Request failed with status ${response.status}`);
+                        }
+
+                        const payload = await response.json();
+                        this.helpArticle = payload.data?.article || null;
+                    } catch {
+                        this.helpArticle = null;
+                        this.error = 'The help article could not be loaded.';
+                    } finally {
+                        this.helpLoading = false;
+                    }
                 },
 
                 openArchivedChat(sessionId) {

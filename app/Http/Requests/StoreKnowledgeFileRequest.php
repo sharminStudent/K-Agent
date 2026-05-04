@@ -2,13 +2,25 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Agent;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreKnowledgeFileRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+        $widgetToken = (string) $this->input('widget_token');
+
+        if (! $user || $widgetToken === '') {
+            return false;
+        }
+
+        return Agent::query()
+            ->where('widget_token', $widgetToken)
+            ->where('is_active', true)
+            ->whereKey($user->agent_id)
+            ->exists();
     }
 
     /**

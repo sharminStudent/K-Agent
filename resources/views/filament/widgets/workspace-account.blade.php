@@ -25,20 +25,13 @@
             </div>
 
             <div class="ka-account-meta">
-                <span>{{ $user->email }}</span>
-
-                <form action="{{ filament()->getLogoutUrl() }}" method="post">
-                    @csrf
-
-                    <x-filament::button
-                        color="gray"
-                        size="sm"
-                        tag="button"
-                        type="submit"
-                    >
-                        Sign out
-                    </x-filament::button>
-                </form>
+                <div class="ka-account-meta-stack">
+                    <span>{{ $user->email }}</span>
+                    <span>Platform support: <a href="mailto:{{ $supportContact }}">{{ $supportContact }}</a></span>
+                    @if ($widgetPreviewUrl)
+                        <a href="{{ $widgetPreviewUrl }}" target="_blank" rel="noopener noreferrer">Open widget preview</a>
+                    @endif
+                </div>
             </div>
         </div>
     </x-filament::section>

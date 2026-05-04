@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Agent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
@@ -21,8 +22,8 @@ class AdminDashboardTest extends TestCase
     public function test_authenticated_user_can_view_the_admin_dashboard(): void
     {
         $agent = Agent::query()->create([
-            'name' => 'K-Agent',
-            'company_name' => 'K-Agent Demo',
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
         ]);
 
@@ -38,8 +39,8 @@ class AdminDashboardTest extends TestCase
     public function test_authenticated_user_can_view_the_main_filament_pages(): void
     {
         $agent = Agent::query()->create([
-            'name' => 'K-Agent',
-            'company_name' => 'K-Agent Demo',
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
         ]);
 
@@ -50,12 +51,12 @@ class AdminDashboardTest extends TestCase
         foreach ([
             '/admin',
             '/admin/agent-settings',
-            '/admin/ai-tester',
             '/admin/chat-sessions',
             '/admin/leads',
             '/admin/knowledge-files',
             '/admin/general-settings',
             '/admin/company-profile',
+            '/admin/company-activity-logs',
             '/admin/edit-company-profile',
         ] as $path) {
             $this->actingAs($user)
@@ -86,8 +87,8 @@ class AdminDashboardTest extends TestCase
     public function test_user_with_an_existing_agent_is_sent_to_agent_settings(): void
     {
         $agent = Agent::query()->create([
-            'name' => 'K-Agent',
-            'company_name' => 'K-Agent Demo',
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
         ]);
 
@@ -111,8 +112,8 @@ class AdminDashboardTest extends TestCase
     public function test_company_user_can_download_its_own_transcript(): void
     {
         $agent = Agent::query()->create([
-            'name' => 'K-Agent',
-            'company_name' => 'K-Agent Demo',
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
         ]);
 
@@ -142,8 +143,8 @@ class AdminDashboardTest extends TestCase
     public function test_company_user_cannot_download_another_companys_transcript(): void
     {
         $agent = Agent::query()->create([
-            'name' => 'K-Agent',
-            'company_name' => 'K-Agent Demo',
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
         ]);
 
@@ -165,5 +166,45 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($user)
             ->get("/admin/chat-sessions/{$chatSession->id}/transcript")
             ->assertForbidden();
+    }
+
+    public function test_activity_logs_page_shows_company_scoped_entries(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $otherAgent = Agent::query()->create([
+            'name' => 'Other Assistant',
+            'company_name' => 'Other Demo',
+            'widget_token' => 'other-widget-token',
+        ]);
+
+        $user = User::factory()->create([
+            'agent_id' => $agent->id,
+        ]);
+
+        ActivityLog::query()->create([
+            'agent_id' => $agent->id,
+            'user_id' => $user->id,
+            'category' => 'admin',
+            'event' => 'admin.profile.updated',
+            'description' => 'Workspace profile settings were updated.',
+        ]);
+
+        ActivityLog::query()->create([
+            'agent_id' => $otherAgent->id,
+            'category' => 'system',
+            'event' => 'lead.captured',
+            'description' => 'A new lead was captured from the widget.',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/admin/company-activity-logs')
+            ->assertOk()
+            ->assertSee('Workspace profile settings were updated.')
+            ->assertDontSee('A new lead was captured from the widget.');
     }
 }

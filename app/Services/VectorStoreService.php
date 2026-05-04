@@ -13,8 +13,7 @@ class VectorStoreService
 {
     public function __construct(
         protected AgentProviderConfigService $agentProviderConfigService,
-    ) {
-    }
+    ) {}
 
     public function isConfigured(?Agent $agent = null): bool
     {
@@ -152,6 +151,42 @@ class VectorStoreService
             ->all();
     }
 
+    public function deleteKnowledgeEmbeddings(KnowledgeFile $knowledgeFile): void
+    {
+        $agent = $this->resolveAgentForKnowledgeFile($knowledgeFile);
+        $meta = $knowledgeFile->meta ?? [];
+        $disk = Storage::disk($knowledgeFile->disk);
+        $embeddingsPath = $meta['embeddings_path'] ?? null;
+
+        if (is_string($embeddingsPath) && $embeddingsPath !== '' && $disk->exists($embeddingsPath)) {
+            $disk->delete($embeddingsPath);
+        }
+
+        $pointIds = collect($meta['vector_point_ids'] ?? [])
+            ->filter(fn ($id): bool => is_string($id) && $id !== '')
+            ->values()
+            ->all();
+
+        if (! $this->isConfigured($agent) || ($meta['vector_backend'] ?? null) !== 'qdrant' || $pointIds === []) {
+            return;
+        }
+
+        try {
+            $this->http($this->agentProviderConfigService->qdrantConfig($agent))
+                ->post('/collections/'.$this->collectionName($agent).'/points/delete', [
+                    'points' => $pointIds,
+                ])
+                ->throw();
+        } catch (\Throwable $exception) {
+            report($exception);
+            Log::warning('Failed to delete remote knowledge embeddings from Qdrant.', [
+                'knowledge_file_id' => $knowledgeFile->id,
+                'agent_id' => $knowledgeFile->agent_id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $payload
      * @return array<int, string>
@@ -275,7 +310,7 @@ class VectorStoreService
 
     protected function collectionName(?Agent $agent = null): string
     {
-        return (string) ($this->agentProviderConfigService->qdrantConfig($agent)['collection'] ?? 'k_agent_knowledge');
+        return (string) ($this->agentProviderConfigService->qdrantConfig($agent)['collection'] ?? 'agent_knowledge');
     }
 
     /**

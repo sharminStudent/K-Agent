@@ -3,10 +3,15 @@
 namespace App\Filament\Pages;
 
 use App\Models\Agent;
-use App\Services\AgentProviderConfigService;
 use App\Services\AgentService;
+use App\Support\BahrainPhone;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TextInput as FormsTextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasMaxWidth;
 use Filament\Pages\Page;
@@ -25,7 +30,7 @@ class AgentSettings extends Page
 {
     use HasMaxWidth;
 
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $navigationLabel = 'Agent Settings';
 
@@ -40,7 +45,7 @@ class AgentSettings extends Page
 
     public static function canAccess(): bool
     {
-        return Filament::auth()->check();
+        return Filament::auth()->check() && ! Filament::auth()->user()?->isSuperAdmin();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -56,30 +61,23 @@ class AgentSettings extends Page
 
         if (! $this->agentRecord) {
             $this->redirect(AgentSetup::getUrl(), navigate: true);
+
             return;
         }
 
         $this->form->fill([
             'name' => $this->agentRecord->name,
-            'company_name' => $this->agentRecord->company_name,
-            'slug' => $this->agentRecord->slug,
-            'website_url' => $this->agentRecord->website_url,
-            'industry' => $this->agentRecord->industry,
-            'company_description' => $this->agentRecord->company_description,
-            'logo_path' => $this->agentRecord->logo_path,
             'contact_email' => $this->agentRecord->contact_email,
             'support_email' => $this->agentRecord->support_email,
-            'support_phone' => $this->agentRecord->support_phone,
-            'system_prompt' => $this->agentRecord->system_prompt,
+            'support_phone' => BahrainPhone::localDigits($this->agentRecord->support_phone),
             'welcome_message' => $this->agentRecord->welcome_message,
             'fallback_message' => $this->agentRecord->fallback_message,
-            'settings' => $this->agentSettingsWithoutProviderCredentials(),
-            'provider_settings' => app(AgentProviderConfigService::class)->sanitizedProviderSettings($this->agentRecord),
+            'privacy_url' => $this->agentRecord->settings['privacy_url'] ?? null,
             'is_active' => $this->agentRecord->is_active,
         ]);
     }
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return 'Agent Settings';
     }
@@ -95,143 +93,70 @@ class AgentSettings extends Page
     {
         return $schema
             ->components([
-                Section::make('Company Profile')
+                Section::make('Assistant Persona')
+                    ->description('Control how the assistant presents itself for this company workspace.')
                     ->schema([
-                        \Filament\Forms\Components\FileUpload::make('logo_path')
-                            ->label('Company Logo')
-                            ->disk('public')
-                            ->directory('company-logos')
-                            ->image()
-                            ->maxSize(2048)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\TextInput::make('name')
-                            ->label('Agent Name')
+                        TextInput::make('name')
+                            ->label('Assistant Display Name')
                             ->required()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('company_name')
-                            ->label('Company Name')
-                            ->required()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('slug')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('website_url')
-                            ->url()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('industry')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\Textarea::make('company_description')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-                Section::make('Support and Messaging')
+                            ->maxLength(255)
+                            ->placeholder('Example: K-Agent')
+                            ->helperText('Shown to visitors as the assistant identity.'),
+                        Textarea::make('welcome_message')
+                            ->label('Welcome Message')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Example: Hi, I am K-Agent. How can I help you today?'),
+                        Textarea::make('fallback_message')
+                            ->label('Fallback Message')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Example: I do not have enough confirmed information to answer that yet.'),
+                    ]),
+                Section::make('Support and Routing')
                     ->schema([
-                        \Filament\Forms\Components\TextInput::make('contact_email')
+                        TextInput::make('contact_email')
                             ->email()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('support_email')
+                        TextInput::make('support_email')
                             ->email()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('support_phone')
+                        TextInput::make('support_phone')
                             ->tel()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\Toggle::make('is_active')
+                            ->prefix('+973')
+                            ->inputMode('numeric')
+                            ->minLength(8)
+                            ->maxLength(8)
+                            ->placeholder('12345678')
+                            ->helperText('Enter 8 digits. Bahrain country code `+973` is added automatically.')
+                            ->rule('regex:/^\d{8}$/')
+                            ->dehydrateStateUsing(fn (?string $state): ?string => BahrainPhone::normalizeForStorage($state)),
+                        TextInput::make('privacy_url')
+                            ->label('Privacy Policy URL')
+                            ->url()
+                            ->maxLength(255)
+                            ->placeholder('https://example.com/privacy'),
+                        Toggle::make('is_active')
                             ->default(true),
-                        \Filament\Forms\Components\Textarea::make('welcome_message')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\Textarea::make('fallback_message')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\Textarea::make('system_prompt')
-                            ->rows(6)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\KeyValue::make('settings')
-                            ->label('Custom Settings')
-                            ->columnSpanFull(),
                     ])
                     ->columns(2),
-                Section::make('Provider Credentials')
+                Section::make('Widget Integration')
+                    ->description('Use this company widget token and embed code on your own website only.')
                     ->schema([
-                        \Filament\Forms\Components\Toggle::make('provider_settings.openai.enabled')
-                            ->label('Use Company OpenAI Credentials')
-                            ->inline(false)
-                            ->default(false)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.openai.api_key')
-                            ->label('OpenAI API Key')
-                            ->password()
-                            ->revealable()
-                            ->autocomplete('new-password')
-                            ->placeholder('Leave blank to keep the existing key'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.openai.base_url')
-                            ->label('OpenAI Base URL')
-                            ->url()
-                            ->maxLength(255)
-                            ->placeholder('https://api.openai.com/v1'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.openai.chat_model')
-                            ->label('OpenAI Chat Model')
-                            ->maxLength(255)
-                            ->placeholder('gpt-5.3'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.openai.embedding_model')
-                            ->label('OpenAI Embedding Model')
-                            ->maxLength(255)
-                            ->placeholder('text-embedding-3-large'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.openai.timeout')
-                            ->label('OpenAI Timeout')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(300),
-                        \Filament\Forms\Components\Toggle::make('provider_settings.qdrant.enabled')
-                            ->label('Use Company Qdrant Credentials')
-                            ->inline(false)
-                            ->default(false)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.qdrant.api_key')
-                            ->label('Qdrant API Key')
-                            ->password()
-                            ->revealable()
-                            ->autocomplete('new-password')
-                            ->placeholder('Leave blank to keep the existing key'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.qdrant.base_url')
-                            ->label('Qdrant URL')
-                            ->url()
-                            ->maxLength(255)
-                            ->placeholder('http://127.0.0.1:6333'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.qdrant.collection')
-                            ->label('Qdrant Collection')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.qdrant.distance')
-                            ->label('Qdrant Distance')
-                            ->maxLength(50)
-                            ->placeholder('Cosine'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.qdrant.timeout')
-                            ->label('Qdrant Timeout')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(300),
-                        \Filament\Forms\Components\Toggle::make('provider_settings.railway.enabled')
-                            ->label('Use Company Railway Credentials')
-                            ->inline(false)
-                            ->default(false)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.railway.api_key')
-                            ->label('Railway API Token')
-                            ->password()
-                            ->revealable()
-                            ->autocomplete('new-password')
-                            ->placeholder('Leave blank to keep the existing token'),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.railway.project_id')
-                            ->label('Railway Project ID')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.railway.environment_id')
-                            ->label('Railway Environment ID')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('provider_settings.railway.service_id')
-                            ->label('Railway Service ID')
-                            ->maxLength(255),
+                        Placeholder::make('widget_token')
+                            ->label('Widget Token')
+                            ->content(fn (): string => (string) ($this->agentRecord?->widget_token ?? '-')),
+                        FormsTextInput::make('widget_embed_code')
+                            ->label('Embed Script')
+                            ->dehydrated(false)
+                            ->readOnly()
+                            ->columnSpanFull()
+                            ->formatStateUsing(fn (): string => sprintf(
+                                '<script src="%s"></script>',
+                                url('/widget/'.($this->agentRecord?->widget_token ?? '').'/embed.js')
+                            )),
                     ])
-                    ->columns(2),
+                    ->columns(1),
             ]);
     }
 
@@ -264,6 +189,11 @@ class AgentSettings extends Page
         /** @var array<string, mixed> $state */
         $state = $this->form->getState();
 
+        $state['settings'] = array_filter([
+            'privacy_url' => $state['privacy_url'] ?? null,
+        ], fn (mixed $value): bool => filled($value));
+        unset($state['privacy_url']);
+
         $agentService->updateAgent($agent, $state);
 
         Notification::make()
@@ -273,17 +203,5 @@ class AgentSettings extends Page
             ->send();
 
         $this->agentRecord = Filament::auth()->user()?->fresh()?->agent()->first();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function agentSettingsWithoutProviderCredentials(): array
-    {
-        $settings = $this->agentRecord?->settings ?? [];
-
-        unset($settings['provider_credentials']);
-
-        return is_array($settings) ? $settings : [];
     }
 }

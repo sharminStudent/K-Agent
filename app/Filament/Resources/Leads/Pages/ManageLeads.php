@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Leads\Pages;
 
 use App\Filament\Resources\Leads\LeadResource;
+use App\Models\Lead;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 
 class ManageLeads extends ManageRecords
 {
@@ -17,14 +19,14 @@ class ManageLeads extends ManageRecords
         return [
             Action::make('exportCsv')
                 ->label('Export CSV')
-                ->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowDownTray)
+                ->icon(Heroicon::OutlinedArrowDownTray)
                 ->action(function () {
                     $agentId = auth()->user()?->agent_id;
 
                     abort_unless($agentId !== null, 403);
 
                     $filename = 'leads-'.now()->format('Y-m-d-His').'.csv';
-                    $leads = \App\Models\Lead::query()
+                    $leads = Lead::query()
                         ->where('agent_id', $agentId)
                         ->with('chatSession')
                         ->orderByDesc('created_at')
@@ -32,6 +34,7 @@ class ManageLeads extends ManageRecords
 
                     return response()->streamDownload(function () use ($leads): void {
                         $handle = fopen('php://output', 'w');
+                        fwrite($handle, "\xEF\xBB\xBF");
 
                         fputcsv($handle, [
                             'Name',
@@ -51,7 +54,7 @@ class ManageLeads extends ManageRecords
                                 $lead->status,
                                 $lead->chatSession?->public_id,
                                 $lead->notes,
-                                optional($lead->created_at)?->toDateTimeString(),
+                                $lead->created_at?->format('m/d/Y h:i:s A'),
                             ]);
                         }
 

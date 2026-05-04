@@ -12,8 +12,7 @@ class ChatController extends Controller
 {
     public function __construct(
         protected ChatService $chatService,
-    ) {
-    }
+    ) {}
 
     public function createSession(CreateChatSessionRequest $request): JsonResponse
     {
@@ -43,6 +42,7 @@ class ChatController extends Controller
                     'role' => $assistantMessage->role,
                     'content' => $assistantMessage->content,
                     'created_at' => $assistantMessage->created_at?->toISOString(),
+                    'meta' => $assistantMessage->meta,
                 ],
                 'created_at' => $message->created_at?->toISOString(),
             ],

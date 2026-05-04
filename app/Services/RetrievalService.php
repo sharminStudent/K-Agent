@@ -4,14 +4,14 @@ namespace App\Services;
 
 use App\Models\Agent;
 use App\Models\KnowledgeFile;
+use Illuminate\Support\Facades\Storage;
 
 class RetrievalService
 {
     public function __construct(
         protected EmbeddingService $embeddingService,
         protected VectorStoreService $vectorStoreService,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<int, array<string, mixed>>
@@ -107,7 +107,7 @@ class RetrievalService
             return [];
         }
 
-        $disk = \Illuminate\Support\Facades\Storage::disk($knowledgeFile->disk);
+        $disk = Storage::disk($knowledgeFile->disk);
 
         if (! $disk->exists($path)) {
             return [];
@@ -126,10 +126,26 @@ class RetrievalService
 
         $haystack = mb_strtolower($content);
         $score = 0;
+        $weightedTokens = [
+            'process' => 4,
+            'steps' => 3,
+            'started' => 3,
+            'start' => 2,
+            'kick' => 2,
+            'kickoff' => 3,
+            'requirements' => 2,
+            'requirement' => 2,
+            'gathering' => 2,
+            'testing' => 2,
+            'deployment' => 2,
+            'support' => 2,
+            'guide' => 2,
+            'through' => 2,
+        ];
 
         foreach ($tokens as $token) {
             if (str_contains($haystack, $token)) {
-                $score++;
+                $score += $weightedTokens[$token] ?? 1;
             }
         }
 

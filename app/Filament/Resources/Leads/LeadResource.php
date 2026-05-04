@@ -5,19 +5,21 @@ namespace App\Filament\Resources\Leads;
 use App\Filament\Resources\Leads\Pages\ManageLeads;
 use App\Models\Lead;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\KeyValue;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,37 +33,29 @@ class LeadResource extends Resource
 
     protected static ?string $navigationLabel = 'Leads';
 
+    public static function canViewAny(): bool
+    {
+        return ! Filament::auth()->user()?->isSuperAdmin();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Section::make('Lead Details')
-                    ->schema([
-                        TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        TextInput::make('email')
-                            ->email()
-                            ->maxLength(255),
-                        TextInput::make('phone')
-                            ->tel()
-                            ->maxLength(255),
-                        Select::make('status')
-                            ->options([
-                                'new' => 'New',
-                                'contacted' => 'Contacted',
-                                'qualified' => 'Qualified',
-                                'closed' => 'Closed',
-                            ])
-                            ->default('new')
-                            ->required(),
-                        Textarea::make('notes')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                        KeyValue::make('meta')
-                            ->columnSpanFull(),
+                TextInput::make('name')
+                    ->disabled()
+                    ->dehydrated(false),
+                TextInput::make('email')
+                    ->email()
+                    ->disabled()
+                    ->dehydrated(false),
+                Select::make('status')
+                    ->options([
+                        'new' => 'New',
+                        'contacted' => 'Contacted',
                     ])
-                    ->columns(2),
+                    ->default('new')
+                    ->required(),
             ]);
     }
 
@@ -73,7 +67,15 @@ class LeadResource extends Resource
                     ->schema([
                         TextEntry::make('name'),
                         TextEntry::make('status')
-                            ->badge(),
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Unknown')
+                            ->color(fn (?string $state): string => match ($state) {
+                                'new' => 'info',
+                                'contacted' => 'warning',
+                                'qualified' => 'success',
+                                'closed' => 'gray',
+                                default => 'danger',
+                            }),
                         TextEntry::make('email'),
                         TextEntry::make('phone'),
                         TextEntry::make('chatSession.public_id')
@@ -101,7 +103,15 @@ class LeadResource extends Resource
                 TextColumn::make('phone')
                     ->toggleable(),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Unknown')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'new' => 'info',
+                        'contacted' => 'warning',
+                        'qualified' => 'success',
+                        'closed' => 'gray',
+                        default => 'danger',
+                    }),
                 TextColumn::make('chatSession.public_id')
                     ->label('Session')
                     ->toggleable(),
@@ -117,11 +127,35 @@ class LeadResource extends Resource
                         'qualified' => 'Qualified',
                         'closed' => 'Closed',
                     ]),
+                Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('from'),
+                        DatePicker::make('until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
+                    }),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                Action::make('view')
+                    ->label('View')
+                    ->color('gray')
+                    ->modalHeading('Lead Details')
+                    ->modalWidth(Width::Medium)
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(fn ($action) => $action->label('Close'))
+                    ->modalContent(fn (Lead $record) => view('filament.modals.lead-view', [
+                        'record' => $record,
+                    ])),
+                EditAction::make()
+                    ->label('Edit')
+                    ->modalWidth(Width::Medium)
+                    ->modalAlignment(Alignment::Start)
+                    ->modalHeading('Edit Lead')
+                    ->modalCancelAction(fn ($action) => $action->label('Close')),
             ]);
     }
 

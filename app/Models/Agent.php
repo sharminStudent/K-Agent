@@ -5,12 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Agent extends Model
 {
     use HasFactory;
+
+    public const PAYMENT_STATUS_TRIAL = 'trial';
+
+    public const PAYMENT_STATUS_ACTIVE = 'active';
+
+    public const PAYMENT_STATUS_PAST_DUE = 'past_due';
+
+    public const PAYMENT_STATUS_CANCELED = 'canceled';
+
+    public const PAYMENT_STATUS_SUSPENDED = 'suspended';
 
     protected $fillable = [
         'name',
@@ -32,6 +43,17 @@ class Agent extends Model
         'fallback_message',
         'settings',
         'is_active',
+        'subscription_plan',
+        'payment_status',
+        'chat_limit',
+        'lead_limit',
+        'monthly_token_limit',
+        'monthly_chat_count',
+        'monthly_lead_count',
+        'monthly_token_count',
+        'api_request_count',
+        'last_api_request_at',
+        'last_error_at',
     ];
 
     protected function casts(): array
@@ -39,6 +61,15 @@ class Agent extends Model
         return [
             'settings' => 'array',
             'is_active' => 'boolean',
+            'chat_limit' => 'integer',
+            'lead_limit' => 'integer',
+            'monthly_token_limit' => 'integer',
+            'monthly_chat_count' => 'integer',
+            'monthly_lead_count' => 'integer',
+            'monthly_token_count' => 'integer',
+            'api_request_count' => 'integer',
+            'last_api_request_at' => 'datetime',
+            'last_error_at' => 'datetime',
         ];
     }
 
@@ -78,6 +109,41 @@ class Agent extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function primaryUser(): HasOne
+    {
+        return $this->hasOne(User::class)->oldestOfMany();
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function paymentRecords(): HasMany
+    {
+        return $this->hasMany(PaymentRecord::class);
+    }
+
+    public function normalizedPaymentStatus(): ?string
+    {
+        $status = strtolower(trim((string) $this->payment_status));
+
+        return $status !== '' ? $status : null;
+    }
+
+    public function allowsWorkspaceAccess(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        return in_array($this->normalizedPaymentStatus(), [
+            null,
+            self::PAYMENT_STATUS_TRIAL,
+            self::PAYMENT_STATUS_ACTIVE,
+        ], true);
     }
 
     public function getLogoUrlAttribute(): ?string

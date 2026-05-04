@@ -7,6 +7,11 @@ use App\Models\User;
 
 class KnowledgeFilePolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isSuperAdmin() ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return true;
@@ -24,11 +29,11 @@ class KnowledgeFilePolicy
 
     public function delete(User $user, KnowledgeFile $knowledgeFile): bool
     {
-        return false;
+        return $user->agent_id === $knowledgeFile->agent_id;
     }
 
     public function deleteAny(User $user): bool
     {
-        return false;
+        return $user->agent_id !== null;
     }
 }

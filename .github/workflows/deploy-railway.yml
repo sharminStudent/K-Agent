@@ -1,0 +1,61 @@
+name: Deploy to Railway
+
+on:
+  workflow_run:
+    workflows:
+      - Tests
+    branches:
+      - master
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE }}
+          RAILWAY_ENVIRONMENT: ${{ secrets.RAILWAY_ENVIRONMENT }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+
+          args=(up --ci)
+
+          if [ -n "${RAILWAY_SERVICE:-}" ]; then
+            args+=(--service "$RAILWAY_SERVICE")
+          fi
+
+          if [ -n "${RAILWAY_ENVIRONMENT:-}" ]; then
+            args+=(--environment "$RAILWAY_ENVIRONMENT")
+          fi
+
+          if [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
+            args+=(--project "$RAILWAY_PROJECT_ID")
+          fi
+
+          railway "${args[@]}"

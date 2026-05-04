@@ -6,22 +6,7 @@
                     <div>
                         <span class="ka-setup-label">Workspace</span>
                         <h2>{{ $companyName }}</h2>
-                        <p>{{ $agentName }} is connected and ready to manage chats, leads, and knowledge.</p>
-                    </div>
-                </div>
-
-                <div class="ka-setup-simple-stats">
-                    <div>
-                        <span>Chat sessions</span>
-                        <strong>{{ $chatCount }}</strong>
-                    </div>
-                    <div>
-                        <span>Leads</span>
-                        <strong>{{ $leadCount }}</strong>
-                    </div>
-                    <div>
-                        <span>Knowledge ready</span>
-                        <strong>{{ $readyKnowledgeCount }}/{{ $knowledgeCount }}</strong>
+                        <p>{{ $agentName }}</p>
                     </div>
                 </div>
                 <div class="ka-setup-simple-links">
@@ -29,6 +14,9 @@
                     <a href="{{ $knowledgeUrl }}">Knowledge files</a>
                     <a href="{{ $leadUrl }}">Leads</a>
                     <a href="{{ $chatUrl }}">Chat logs</a>
+                    @if ($widgetPreviewUrl)
+                        <a href="{{ $widgetPreviewUrl }}" target="_blank" rel="noopener noreferrer">Widget preview</a>
+                    @endif
                 </div>
             </div>
         @else

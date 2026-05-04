@@ -2,8 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\Support\BahrainPhone;
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasMaxWidth;
 use Filament\Pages\Page;
@@ -24,7 +28,7 @@ class EditCompanyProfile extends Page
 
     protected static bool $shouldRegisterNavigation = false;
 
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::OutlinedPencilSquare;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPencilSquare;
 
     protected static ?string $navigationLabel = 'Edit Profile';
 
@@ -37,22 +41,27 @@ class EditCompanyProfile extends Page
 
     public static function canAccess(): bool
     {
-        return Filament::auth()->check();
+        return Filament::auth()->check() && ! Filament::auth()->user()?->isSuperAdmin();
     }
 
     public function mount(): void
     {
         $user = Filament::auth()->user();
+        $agent = $user?->agent;
 
         $this->form->fill([
             'admin_name' => $user?->name,
             'admin_email' => $user?->email,
-            'admin_phone' => $user?->phone,
-            'admin_basic_info' => $user?->basic_info,
+            'admin_phone' => BahrainPhone::localDigits($user?->phone),
+            'company_name' => $agent?->company_name,
+            'company_website_url' => $agent?->website_url,
+            'company_slug' => $agent?->slug,
+            'lead_notification_enabled' => (bool) data_get($agent?->settings, 'notifications.lead_capture.enabled', false),
+            'lead_notification_email' => data_get($agent?->settings, 'notifications.lead_capture.email') ?? $user?->email,
         ]);
     }
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return 'Edit Profile';
     }
@@ -71,23 +80,54 @@ class EditCompanyProfile extends Page
                 Section::make('Edit Admin Profile')
                     ->description('Update the primary admin account details for this workspace.')
                     ->schema([
-                        \Filament\Forms\Components\TextInput::make('admin_name')
+                        TextInput::make('admin_name')
                             ->label('Name')
                             ->required()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('admin_email')
+                        TextInput::make('admin_email')
                             ->label('Email')
                             ->email()
                             ->required()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('admin_phone')
+                        TextInput::make('admin_phone')
                             ->label('Phone Number')
                             ->tel()
+                            ->prefix('+973')
+                            ->inputMode('numeric')
+                            ->minLength(8)
+                            ->maxLength(8)
+                            ->placeholder('12345678')
+                            ->helperText('Enter 8 digits. Bahrain country code `+973` is added automatically.')
+                            ->rule('regex:/^\d{8}$/'),
+                    ])
+                    ->columns(2),
+                Section::make('Edit Company Details')
+                    ->description('Update the company profile used in this workspace.')
+                    ->schema([
+                        TextInput::make('company_name')
+                            ->label('Company Name')
+                            ->required()
                             ->maxLength(255),
-                        \Filament\Forms\Components\Textarea::make('admin_basic_info')
-                            ->label('Basic Info')
-                            ->rows(4)
-                            ->columnSpanFull(),
+                        TextInput::make('company_website_url')
+                            ->label('Website URL')
+                            ->url()
+                            ->maxLength(255),
+                        TextInput::make('company_slug')
+                            ->label('Slug')
+                            ->maxLength(255),
+                    ])
+                    ->columns(2),
+                Section::make('Notifications')
+                    ->description('Send an email when a new lead is captured so your team can review it from the dashboard.')
+                    ->schema([
+                        TextInput::make('lead_notification_email')
+                            ->label('Lead Notification Email')
+                            ->email()
+                            ->maxLength(255)
+                            ->required(fn ($get): bool => (bool) $get('lead_notification_enabled')),
+                        Toggle::make('lead_notification_enabled')
+                            ->label('Email me when a lead is captured')
+                            ->default(false),
                     ])
                     ->columns(2),
             ]);
@@ -122,11 +162,25 @@ class EditCompanyProfile extends Page
         /** @var array<string, mixed> $state */
         $state = $this->form->getState();
 
-        Filament::auth()->user()?->update([
+        $user = Filament::auth()->user();
+
+        $user?->update([
             'name' => $state['admin_name'] ?? null,
             'email' => $state['admin_email'] ?? null,
-            'phone' => $state['admin_phone'] ?? null,
-            'basic_info' => $state['admin_basic_info'] ?? null,
+            'phone' => BahrainPhone::normalizeForStorage($state['admin_phone'] ?? null),
+        ]);
+
+        $agent = $user?->agent;
+
+        $settings = is_array($agent?->settings) ? $agent->settings : [];
+        data_set($settings, 'notifications.lead_capture.enabled', (bool) ($state['lead_notification_enabled'] ?? false));
+        data_set($settings, 'notifications.lead_capture.email', $state['lead_notification_email'] ?? null);
+
+        $agent?->update([
+            'company_name' => $state['company_name'] ?? null,
+            'website_url' => $state['company_website_url'] ?? null,
+            'slug' => $state['company_slug'] ?? null,
+            'settings' => $settings,
         ]);
 
         Notification::make()

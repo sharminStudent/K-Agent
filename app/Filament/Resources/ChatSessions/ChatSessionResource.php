@@ -6,14 +6,19 @@ use App\Filament\Resources\ChatSessions\Pages\ManageChatSessions;
 use App\Models\ChatSession;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
-use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +31,11 @@ class ChatSessionResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
     protected static ?string $navigationLabel = 'Chat Logs';
+
+    public static function canViewAny(): bool
+    {
+        return ! Filament::auth()->user()?->isSuperAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -42,7 +52,13 @@ class ChatSessionResource extends Resource
                             ->label('Session ID')
                             ->copyable(),
                         TextEntry::make('status')
-                            ->badge(),
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Unknown')
+                            ->color(fn (?string $state): string => match ($state) {
+                                'active' => 'success',
+                                'closed' => 'gray',
+                                default => 'danger',
+                            }),
                         TextEntry::make('visitor_name')
                             ->label('Visitor Name'),
                         TextEntry::make('visitor_email')
@@ -57,17 +73,9 @@ class ChatSessionResource extends Resource
                     ->columns(2),
                 Section::make('Transcript')
                     ->schema([
-                        RepeatableEntry::make('messages')
-                            ->schema([
-                                TextEntry::make('role')
-                                    ->badge(),
-                                TextEntry::make('content')
-                                    ->prose()
-                                    ->columnSpanFull(),
-                                TextEntry::make('created_at')
-                                    ->dateTime(),
-                            ])
-                            ->columns(3)
+                        ViewEntry::make('messages')
+                            ->hiddenLabel()
+                            ->view('filament.infolists.chat-transcript')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -94,11 +102,16 @@ class ChatSessionResource extends Resource
                     ->toggleable(),
                 TextColumn::make('visitor_phone')
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('status')
-                    ->badge(),
-                TextColumn::make('messages_count')
-                    ->counts('messages')
-                    ->label('Messages'),
+                ToggleColumn::make('status')
+                    ->label('Active')
+                    ->getStateUsing(fn (ChatSession $record): bool => $record->status === 'active')
+                    ->updateStateUsing(function (ChatSession $record, bool $state): bool {
+                        $record->update([
+                            'status' => $state ? 'active' : 'closed',
+                        ]);
+
+                        return $state;
+                    }),
                 TextColumn::make('leads_count')
                     ->counts('leads')
                     ->label('Leads'),
@@ -112,14 +125,45 @@ class ChatSessionResource extends Resource
                         'active' => 'Active',
                         'closed' => 'Closed',
                     ]),
+                Filter::make('created_at')
+                    ->form([
+                        DatePicker::make('from'),
+                        DatePicker::make('until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date));
+                    }),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
-                ViewAction::make(),
+                Action::make('view')
+                    ->label('View')
+                    ->color('gray')
+                    ->modalWidth(Width::ThreeExtraLarge)
+                    ->modalHeading('Chat Transcript')
+                    ->modalSubmitAction(false)
+                    ->modalContent(fn (ChatSession $record) => view('filament.modals.chat-session-view', [
+                        'record' => $record,
+                    ]))
+                    ->extraModalFooterActions([
+                        Action::make('downloadTranscriptFromModal')
+                            ->label('Download Transcript')
+                            ->icon(Heroicon::OutlinedArrowDownTray)
+                            ->color('primary')
+                            ->url(fn (ChatSession $record): string => route('admin.chat-sessions.transcript', $record), shouldOpenInNewTab: true),
+                    ]),
                 Action::make('downloadTranscript')
                     ->label('Download Transcript')
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->url(fn (ChatSession $record): string => route('admin.chat-sessions.transcript', $record), shouldOpenInNewTab: true),
+            ])
+            ->toolbarActions([
+                DeleteBulkAction::make()
+                    ->label('Delete Selected')
+                    ->requiresConfirmation()
+                    ->deselectRecordsAfterCompletion(),
             ]);
     }
 

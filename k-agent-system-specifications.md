@@ -29,10 +29,10 @@ Proposal tech stack:
 | Tailwind CSS 4 | Frontend styling | Present | Aligned |
 | Laravel Herd | Local PHP/Nginx/Node environment | Not represented in repo docs or runtime config | Environment choice only |
 | Node.js | Frontend/tooling runtime | Implicitly required for Vite/npm | Partially aligned |
-| Livewire 4 | Reactive frontend stack for proposal-aligned widget flows | Implemented for the widget frame | Aligned |
-| Alpine.js | Widget/client interaction layer | Implemented for the widget frame | Aligned |
-| Laravel Reverb | WebSocket/realtime streaming layer | Installed and wired into the widget runtime path | Partially aligned |
-| WebSockets | Realtime streaming transport | Wired into the widget runtime path | Partially aligned |
+| Livewire 4 | Main reactive frontend stack for dashboard/widget | Not implemented | Not aligned |
+| Alpine.js | Widget/client interaction layer | Not implemented | Not aligned |
+| Laravel Reverb | WebSocket/realtime streaming layer | Not implemented | Not aligned |
+| WebSockets | Realtime streaming transport | Not implemented | Not aligned |
 | OpenAI | LLM and embeddings provider | Implemented | Aligned |
 | Text-Embedding-3 | Embedding model family | Implemented via configurable OpenAI embeddings | Aligned |
 | Vector Database | Company knowledge vector storage | Implemented with Qdrant or file fallback | Aligned |
@@ -44,9 +44,7 @@ Proposal tech stack:
 Current practical reading:
 
 - The repo already matches the proposal on Laravel, PHP, PostgreSQL, Tailwind, OpenAI, embeddings, and vector database direction.
-- The repo now matches the proposal on Livewire 4 and Alpine.js for the widget/runtime path.
-- The repo now uses Laravel Reverb and WebSockets for the widget/runtime path, though the current behavior is realtime delivery of completed assistant messages rather than full token-by-token streaming.
-- The repo does not yet match the proposal on Railway deployment or GitHub-based continuous deployment.
+- The repo does not yet match the proposal on Livewire, Alpine.js, Laravel Reverb, WebSockets, Railway deployment, or GitHub-based continuous deployment.
 - Qdrant remains acceptable as the vector database implementation for the proposal's vector storage requirement.
 
 ### 2.3 Proposal Tech Placement
@@ -56,35 +54,23 @@ To avoid further ambiguity, the table below defines where each proposal-required
 | Proposal Technology | Required In This Project | Exact Project Area | Why It Belongs There | Current State |
 |---|---|---|---|---|
 | Laravel Herd | Yes | Local development environment and onboarding documentation | The proposal defines Herd as the local PHP/Nginx/Node environment for running the app during development | Not documented |
-| Livewire 4 | Yes | Interactive widget-facing Laravel UI | Applied to the embeddable widget flow without replacing the existing Filament dashboard | Implemented |
-| Alpine.js | Yes | Widget-side client interaction layer | Applied in the embeddable widget for lightweight frontend behavior and local state | Implemented |
-| Laravel Reverb | Yes | Realtime chat runtime | Installed and used to deliver widget assistant updates over the realtime channel | Implemented for widget runtime |
-| WebSockets | Yes | Transport for streaming responses between backend and widget | Used in the widget runtime transport path through Reverb/Echo | Implemented for widget runtime |
+| Livewire 4 | Yes | Interactive product UI that is part of the Laravel application | The proposal calls for Livewire for the chat bubble/widget interactions and admin dashboard interactivity instead of relying only on Blade plus custom JavaScript | Not implemented |
+| Alpine.js | Yes | Widget-side client interaction layer | The proposal explicitly places Alpine.js in the embeddable widget architecture for lightweight frontend behavior | Not implemented |
+| Laravel Reverb | Yes | Realtime chat runtime | The proposal explicitly requires Reverb to support streaming AI responses over persistent connections | Not implemented |
+| WebSockets | Yes | Transport for streaming responses between backend and widget | The proposal explicitly requires realtime streaming over WebSockets | Not implemented |
 | Railway | Yes | Deployment and production hosting layer | The proposal explicitly defines Railway as the deployment target | Not implemented |
 | GitHub Continuous Deployment | Yes | Deployment automation pipeline | The proposal explicitly requires automated deployment from source control into production | Not implemented |
 
 Practical system mapping:
 
 - `Laravel Herd` belongs in setup documentation, local environment instructions, and team development standards.
-- `Livewire 4` belongs in the embeddable chat/widget experience and related widget-facing Laravel UI.
+- `Livewire 4` belongs in user-facing interactive Laravel UI where proposal compliance matters, especially the embeddable chat experience and any highly interactive dashboard flows.
 - `Alpine.js` belongs inside the widget frontend for lightweight state, open/close behavior, composer state, panels, and client-side interaction handling.
 - `Laravel Reverb` and `WebSockets` belong in the chat delivery layer so assistant responses can stream incrementally instead of waiting for full-message polling responses.
 - `Railway` belongs in deployment configuration, environment variable strategy, service topology, and production rollout documentation.
 - `GitHub Continuous Deployment` belongs in CI/CD workflow files and deployment automation.
-- The existing Filament dashboard should remain in place and should not be refactored away for proposal alignment work unless a later requirement explicitly demands it.
-
-### 2.4 Proposal Tech Not Yet Used In Code
-
-The following proposal technologies are still not implemented in the codebase or project deployment setup:
-
-- `Railway` deployment
-- `GitHub Continuous Deployment`
-
-Clarification:
-
-- `Railway` deployment and `GitHub Continuous Deployment` are missing from the deployment and operations side of the project.
-
-### 2.5 Implemented Core Data Domains
+s
+### 2.4 Implemented Core Data Domains
 
 - `agents`
 - `chat_sessions`
@@ -93,7 +79,7 @@ Clarification:
 - `knowledge_files`
 - `users.agent_id`
 
-### 2.6 Implemented Ownership and Access Rules
+### 2.5 Implemented Ownership and Access Rules
 
 - Authenticated users can create one company agent when they do not already own one.
 - Users can only view or update their own agent configuration.
@@ -149,6 +135,8 @@ Available company/agent fields currently include:
 - Settings JSON
 - Active status
 
+
+
 ### 3.2 Chat Backend
 
 Implemented:
@@ -200,6 +188,8 @@ The following areas are not yet implemented in the current repository:
 - Subscription and billing model
 - Role model beyond the current single-owner pattern
 - Guardrails and fallback analytics integrated into runtime behavior
+- Proposal-aligned widget rebuilt with Livewire 4 + Alpine.js
+- Realtime streaming through Laravel Reverb and WebSockets
 - Railway deployment setup
 - GitHub-based continuous deployment pipeline
 - Deployment strategy and operations plan
@@ -211,8 +201,7 @@ The correct reading of current progress is:
 - The project already has tenant-aware backend groundwork.
 - The project already has a working Filament admin/dashboard shell for internal/company use.
 - The project already has an AI runtime, embeddings flow, retrieval, and a working widget shell.
-- The project now uses the proposal's intended Livewire/Alpine/Reverb/WebSocket stack for the widget/runtime path while keeping Filament intact.
-- The current realtime behavior delivers assistant messages through the Reverb/WebSocket path, but deeper token-level streaming can still be improved later.
+- The project does not yet follow the proposal's intended frontend/realtime stack for the widget experience.
 - The repository is suitable for continuing toward a SaaS platform, but it should not be described as feature-complete or launch-ready.
 
 ## 6. Verified Testing Status
@@ -239,8 +228,8 @@ To move from backend foundation to actual SaaS platform, the next implementation
 
 1. Update project documentation and tracker files to reflect the current Filament/admin state.
 2. Keep the existing OpenAI + Qdrant RAG backend and remove documentation drift around what is already implemented.
-3. Harden and refine the Livewire + Alpine widget flow without replacing the current Filament dashboard.
-4. Extend the existing Reverb/WebSocket widget runtime from completed-message delivery toward richer token-level streaming if required.
+3. Rebuild the customer-facing widget flow toward the proposal stack using Livewire 4 + Alpine.js.
+4. Implement Laravel Reverb and WebSocket streaming for proposal-compliant realtime responses.
 5. Standardize Laravel Herd as the documented local development environment.
 6. Add stronger guardrails, fallback tracking, and platform logging.
 7. Define Railway deployment and GitHub continuous deployment strategy.

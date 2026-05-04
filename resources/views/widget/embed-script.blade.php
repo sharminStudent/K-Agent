@@ -1,9 +1,10 @@
 (function () {
     var widgetToken = @json($widgetToken);
     var frameUrl = @json($frameUrl);
+    var frameOrigin = new URL(frameUrl, window.location.href).origin;
     var companyName = @json($companyName);
-    var launcherId = 'k-agent-widget-launcher-' + widgetToken;
-    var frameId = 'k-agent-widget-frame-' + widgetToken;
+    var launcherId = 'embedded-chat-widget-launcher-' + widgetToken;
+    var frameId = 'embedded-chat-widget-frame-' + widgetToken;
     var chatIcon = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a3 3 0 0 1-3 3H9l-5 3V6a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3Z"></path></svg>';
     var closeIcon = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6 18 18"></path><path d="M18 6 6 18"></path></svg>';
 
@@ -17,7 +18,9 @@
     frame.title = companyName + ' chat widget';
     frame.loading = 'lazy';
     frame.style.position = 'fixed';
+    frame.style.top = 'auto';
     frame.style.right = '24px';
+    frame.style.left = 'auto';
     frame.style.bottom = '88px';
     frame.style.width = '360px';
     frame.style.maxWidth = 'calc(100vw - 16px)';
@@ -62,11 +65,35 @@
 
     var isOpen = false;
 
+    function applyLayout() {
+        var isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
+        var isShortScreen = window.matchMedia('(max-height: 720px)').matches;
+        var compactScreen = isSmallScreen;
+
+        frame.style.top = compactScreen ? 'max(8px, env(safe-area-inset-top))' : 'auto';
+        frame.style.right = compactScreen ? 'max(8px, env(safe-area-inset-right))' : '24px';
+        frame.style.left = compactScreen ? 'max(8px, env(safe-area-inset-left))' : 'auto';
+        frame.style.bottom = compactScreen ? 'max(76px, calc(env(safe-area-inset-bottom) + 68px))' : (isShortScreen ? '24px' : '88px');
+        frame.style.width = compactScreen ? 'calc(100vw - 16px)' : '360px';
+        frame.style.maxWidth = compactScreen ? 'calc(100vw - 16px)' : 'calc(100vw - 16px)';
+        frame.style.height = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : '500px';
+        frame.style.maxHeight = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : 'calc(100vh - 48px)';
+        frame.style.borderRadius = compactScreen ? '14px' : '16px';
+
+        launcher.style.right = compactScreen ? 'max(12px, env(safe-area-inset-right))' : '24px';
+        launcher.style.bottom = compactScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';
+        launcher.style.width = compactScreen ? '56px' : '60px';
+        launcher.style.height = compactScreen ? '56px' : '60px';
+    }
+
     function syncState() {
         frame.style.opacity = isOpen ? '1' : '0';
         frame.style.pointerEvents = isOpen ? 'auto' : 'none';
         frame.style.transform = isOpen ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.98)';
         frame.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        launcher.style.opacity = isOpen ? '0' : '1';
+        launcher.style.pointerEvents = isOpen ? 'none' : 'auto';
+        launcher.style.transform = isOpen ? 'scale(0.92)' : 'scale(1)';
         launcher.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         launcher.innerHTML = isOpen ? closeIcon : chatIcon;
     }
@@ -77,7 +104,15 @@
     });
 
     window.addEventListener('message', function (event) {
-        if (!event || !event.data || event.data.source !== 'k-agent-widget') {
+        if (event.source !== frame.contentWindow) {
+            return;
+        }
+
+        if (event.origin !== frameOrigin) {
+            return;
+        }
+
+        if (!event || !event.data || event.data.source !== 'embedded-chat-widget') {
             return;
         }
 
@@ -92,6 +127,16 @@
         }
     });
 
+    window.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && isOpen) {
+            isOpen = false;
+            syncState();
+        }
+    });
+
+    window.addEventListener('resize', applyLayout);
+
+    applyLayout();
     syncState();
     document.body.appendChild(frame);
     document.body.appendChild(launcher);

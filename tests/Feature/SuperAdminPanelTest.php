@@ -1,0 +1,118 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Agent;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class SuperAdminPanelTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_super_admin_account_is_created_by_migration(): void
+    {
+        $user = User::query()->where('email', 'super@agent.com')->first();
+
+        $this->assertNotNull($user);
+        $this->assertTrue($user->isSuperAdmin());
+    }
+
+    public function test_guest_is_redirected_to_the_shared_admin_login(): void
+    {
+        $this->get('/super-admin')->assertRedirect('/super-admin/login');
+    }
+
+    public function test_super_admin_can_view_global_pages_from_the_super_admin_panel(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $client = User::factory()->create([
+            'agent_id' => $agent->id,
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        foreach ([
+            '/super-admin',
+            '/super-admin/clients',
+            '/super-admin/workspace-users',
+            '/super-admin/admins',
+            '/super-admin/agent-settings',
+            '/super-admin/profile',
+            '/super-admin/activity-logs',
+            '/super-admin/all-chat-sessions',
+            '/super-admin/all-leads',
+            '/super-admin/all-knowledge-files',
+        ] as $path) {
+            $this->actingAs($superAdmin)
+                ->get($path)
+                ->assertOk();
+        }
+
+        $this->assertSame($agent->id, $client->agent_id);
+    }
+
+    public function test_regular_workspace_user_cannot_access_global_super_admin_resources(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $user = User::factory()->create([
+            'agent_id' => $agent->id,
+            'is_super_admin' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/super-admin/clients')
+            ->assertForbidden();
+    }
+
+    public function test_super_admin_workspace_users_and_admins_are_separated_and_have_view_pages(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $client = User::factory()->create([
+            'name' => 'Client User',
+            'email' => 'client@example.com',
+            'agent_id' => $agent->id,
+            'is_super_admin' => false,
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/workspace-users')
+            ->assertOk()
+            ->assertSee('Client User')
+            ->assertDontSee('super@agent.com');
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/admins')
+            ->assertOk()
+            ->assertSee('super@agent.com')
+            ->assertDontSee('client@example.com');
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/workspace-users/'.$client->getKey())
+            ->assertOk()
+            ->assertSee('client@example.com');
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/admins/'.$superAdmin->getKey())
+            ->assertOk()
+            ->assertSee('super@agent.com');
+    }
+}

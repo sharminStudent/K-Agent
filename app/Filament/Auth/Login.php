@@ -23,12 +23,12 @@ class Login extends BaseLogin
         return true;
     }
 
-    public function getLogo(): string | Htmlable | null
+    public function getLogo(): string|Htmlable|null
     {
         return WorkspaceBranding::loginLogoUrl();
     }
 
-    public function getHeading(): string | Htmlable | null
+    public function getHeading(): string|Htmlable|null
     {
         if (filled($this->userUndertakingMultiFactorAuthentication)) {
             return parent::getHeading();
@@ -37,7 +37,7 @@ class Login extends BaseLogin
         return '';
     }
 
-    public function getSubheading(): string | Htmlable | null
+    public function getSubheading(): string|Htmlable|null
     {
         if (filled($this->userUndertakingMultiFactorAuthentication)) {
             return parent::getSubheading();

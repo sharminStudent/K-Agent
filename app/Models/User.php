@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'phone', 'basic_info', 'password', 'agent_id'])]
+#[Fillable(['name', 'email', 'phone', 'basic_info', 'password', 'agent_id', 'is_super_admin', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -30,6 +31,8 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -38,8 +41,30 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsTo(Agent::class);
     }
 
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin';
+        if (! $this->is_active) {
+            return false;
+        }
+
+        return match ($panel->getId()) {
+            'admin' => ! $this->isSuperAdmin()
+                && (
+                    $this->agent_id === null
+                    || $this->agent?->allowsWorkspaceAccess() === true
+                ),
+            'super-admin' => $this->isSuperAdmin(),
+            default => false,
+        };
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 }

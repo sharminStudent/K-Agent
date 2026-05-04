@@ -2,66 +2,65 @@
 
 namespace App\Support;
 
-use App\Models\Agent;
-use Filament\Facades\Filament;
+use App\Models\PlatformSetting;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class WorkspaceBranding
 {
+    public const LIGHT_LOGO_KEY = 'branding.light_logo_path';
+
+    public const DARK_LOGO_KEY = 'branding.dark_logo_path';
+
+    public const LOGIN_LOGO_KEY = 'branding.login_logo_path';
+
     public static function lightLogoUrl(): string
     {
-        return static::publicUrl(static::resolveAgent()?->light_logo_path) ?? asset('images/fix.png');
+        return static::publicUrl(static::setting(static::LIGHT_LOGO_KEY)) ?? asset('images/fix.png');
     }
 
     public static function darkLogoUrl(): string
     {
-        return static::publicUrl(static::resolveAgent()?->dark_logo_path) ?? asset('images/login_logo.png');
+        return static::publicUrl(static::setting(static::DARK_LOGO_KEY)) ?? asset('images/login_logo.png');
     }
 
     public static function loginLogoUrl(): string
     {
-        return static::darkLogoUrl();
+        return static::publicUrl(static::setting(static::LOGIN_LOGO_KEY))
+            ?? static::publicUrl(static::setting(static::DARK_LOGO_KEY))
+            ?? asset('images/login_logo.png');
     }
 
-    protected static function resolveAgent(): ?Agent
+    public static function setting(string $key): ?string
     {
-        $user = Filament::auth()->user();
-
-        if ($user?->agent) {
-            return $user->agent;
-        }
-
-        if (! Schema::hasTable('agents') || ! Schema::hasColumns('agents', [
-            'login_logo_path',
-            'light_logo_path',
-            'dark_logo_path',
-        ])) {
+        if (! Schema::hasTable('platform_settings')) {
             return null;
         }
 
         try {
-            $agentWithDarkLogo = Agent::query()
-                ->whereNotNull('dark_logo_path')
-                ->latest('updated_at')
-                ->first();
-
-            if ($agentWithDarkLogo) {
-                return $agentWithDarkLogo;
-            }
-
-            return Agent::query()
-                ->where(function ($query): void {
-                    $query
-                        ->whereNotNull('login_logo_path')
-                        ->orWhereNotNull('light_logo_path')
-                        ->orWhereNotNull('dark_logo_path');
-                })
-                ->latest('updated_at')
-                ->first();
+            $value = PlatformSetting::query()
+                ->where('key', $key)
+                ->value('value');
         } catch (QueryException) {
             return null;
+        }
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public static function updateSetting(string $key, ?string $value): void
+    {
+        if (! Schema::hasTable('platform_settings')) {
+            return;
+        }
+
+        try {
+            PlatformSetting::query()->updateOrCreate(
+                ['key' => $key],
+                ['value' => filled($value) ? $value : null],
+            );
+        } catch (QueryException) {
         }
     }
 

@@ -5,7 +5,6 @@ namespace App\Livewire\Widget;
 use App\Models\Agent;
 use App\Models\ChatSession;
 use App\Services\ChatService;
-use App\Services\LeadService;
 use Livewire\Component;
 
 class ChatFrame extends Component
@@ -65,7 +64,6 @@ class ChatFrame extends Component
         abort_if($message === '', 422, 'A message is required.');
 
         $this->resolveSession($sessionId);
-        $this->captureLeadFromMessage($message, $sessionId);
 
         [$chatSession, $userMessage, $assistantMessage] = app(ChatService::class)->storeVisitorMessage([
             'widget_token' => $this->agent->widget_token,
@@ -101,24 +99,5 @@ class ChatFrame extends Component
             ->where('public_id', $sessionId)
             ->where('agent_id', $this->agent->id)
             ->firstOrFail();
-    }
-
-    protected function captureLeadFromMessage(string $message, string $sessionId): void
-    {
-        if (! preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $message, $matches)) {
-            return;
-        }
-
-        try {
-            app(LeadService::class)->storeLead([
-                'widget_token' => $this->agent->widget_token,
-                'session_id' => $sessionId,
-                'name' => 'Website Visitor',
-                'email' => $matches[0],
-                'notes' => $message,
-            ]);
-        } catch (\Throwable) {
-            // Lead capture should not break the main widget chat flow.
-        }
     }
 }

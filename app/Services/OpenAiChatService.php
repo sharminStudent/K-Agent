@@ -9,8 +9,8 @@ class OpenAiChatService
 {
     public function __construct(
         protected AgentProviderConfigService $agentProviderConfigService,
-    ) {
-    }
+        protected UsageTrackingService $usageTrackingService,
+    ) {}
 
     public function isConfigured(?Agent $agent = null): bool
     {
@@ -31,16 +31,28 @@ class OpenAiChatService
             throw new \RuntimeException('OpenAI chat is not configured.');
         }
 
-        $response = Http::baseUrl($config['base_url'])
-            ->timeout($config['timeout'])
-            ->withToken($config['api_key'])
-            ->post('/responses', [
-                'model' => $config['chat_model'],
-                'instructions' => $instructions,
-                'input' => $input,
-            ])
-            ->throw()
-            ->json();
+        try {
+            $response = Http::baseUrl($config['base_url'])
+                ->timeout($config['timeout'])
+                ->withToken($config['api_key'])
+                ->post('/responses', [
+                    'model' => $config['chat_model'],
+                    'instructions' => $instructions,
+                    'input' => $input,
+                ])
+                ->throw()
+                ->json();
+        } catch (\Throwable $exception) {
+            if ($agent) {
+                $this->usageTrackingService->recordProviderFailure($agent);
+            }
+
+            throw $exception;
+        }
+
+        if ($agent) {
+            $this->usageTrackingService->recordTokenUsage($agent, $this->extractTotalTokens($response));
+        }
 
         return [
             'content' => $this->extractOutputText($response),
@@ -62,5 +74,22 @@ class OpenAiChatService
         }
 
         throw new \RuntimeException('OpenAI response did not contain output text.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    protected function extractTotalTokens(array $response): int
+    {
+        $totalTokens = data_get($response, 'usage.total_tokens');
+
+        if (is_numeric($totalTokens)) {
+            return max(0, (int) $totalTokens);
+        }
+
+        $inputTokens = data_get($response, 'usage.input_tokens');
+        $outputTokens = data_get($response, 'usage.output_tokens');
+
+        return max(0, (int) $inputTokens) + max(0, (int) $outputTokens);
     }
 }

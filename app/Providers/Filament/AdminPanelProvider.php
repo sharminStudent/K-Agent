@@ -3,7 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
+use App\Filament\Widgets\CompanyStats;
+use App\Filament\Widgets\RecentChatSessionsTable;
+use App\Filament\Widgets\RecentLeadsTable;
 use App\Support\WorkspaceBranding;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -15,6 +19,7 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -31,13 +36,13 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->brandName('K-Agent')
-            ->brandLogo(fn (): string => request()->routeIs('filament.admin.auth.login')
-                ? WorkspaceBranding::loginLogoUrl()
-                : WorkspaceBranding::lightLogoUrl())
-            ->darkModeBrandLogo(fn (): string => request()->routeIs('filament.admin.auth.login')
-                ? WorkspaceBranding::loginLogoUrl()
-                : WorkspaceBranding::darkLogoUrl())
+            ->brandName((string) config('app.name', 'Workspace'))
+            ->brandLogo(fn (): string => Filament::auth()->check()
+                ? WorkspaceBranding::lightLogoUrl()
+                : WorkspaceBranding::loginLogoUrl())
+            ->darkModeBrandLogo(fn (): string => Filament::auth()->check()
+                ? WorkspaceBranding::darkLogoUrl()
+                : WorkspaceBranding::loginLogoUrl())
             ->brandLogoHeight('2.75rem')
             ->login(Login::class)
             ->colors([
@@ -45,14 +50,20 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->navigationItems([
-                NavigationItem::make('General Settings')
-                    ->icon(Heroicon::OutlinedCog8Tooth)
+                NavigationItem::make('Logout')
+                    ->group('General Settings')
+                    ->icon(Heroicon::OutlinedArrowLeftStartOnRectangle)
                     ->url('#')
-                    ->sort(4),
+                    ->sort(99)
+                    ->visible(fn (): bool => ! (bool) auth()->user()?->isSuperAdmin())
+                    ->extraAttributes([
+                        'class' => 'ka-logout-nav-item',
+                        'x-on:click.prevent' => '$dispatch(\'open-modal\', { id: \'company-logout-confirmation\' })',
+                    ]),
             ])
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
-                fn (): \Illuminate\Contracts\View\View => view('filament.partials.runtime-overrides'),
+                fn (): View => view('filament.partials.runtime-overrides'),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -60,13 +71,9 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->widgets([
-                \App\Filament\Widgets\SetupStatus::class,
-                \App\Filament\Widgets\CompanyStats::class,
-                \App\Filament\Widgets\ConversationTrends::class,
-                \App\Filament\Widgets\WorkspaceAccount::class,
-                \App\Filament\Widgets\RecentChatSessionsTable::class,
-                \App\Filament\Widgets\RecentLeadsTable::class,
-                \App\Filament\Widgets\WorkspaceUsersTable::class,
+                CompanyStats::class,
+                RecentChatSessionsTable::class,
+                RecentLeadsTable::class,
             ])
             ->middleware([
                 EncryptCookies::class,

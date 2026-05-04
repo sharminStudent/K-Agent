@@ -2,11 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Actions\Action;
+use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Actions;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -14,7 +12,7 @@ class GeneralSettings extends Page
 {
     protected static bool $shouldRegisterNavigation = false;
 
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::OutlinedCog8Tooth;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog8Tooth;
 
     protected static ?string $navigationLabel = 'General Settings';
 
@@ -22,7 +20,7 @@ class GeneralSettings extends Page
 
     public static function canAccess(): bool
     {
-        return Filament::auth()->check();
+        return Filament::auth()->check() && ! Filament::auth()->user()?->isSuperAdmin();
     }
 
     public function getTitle(): string
@@ -32,18 +30,6 @@ class GeneralSettings extends Page
 
     public function content(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                Section::make('Settings Sections')
-                    ->description('Manage admin-facing settings using the subsections below.')
-                    ->schema([
-                        Actions::make([
-                            Action::make('profile')
-                                ->label('Open Profile')
-                                ->icon(Heroicon::OutlinedUserCircle)
-                                ->url(CompanyProfile::getUrl()),
-                        ]),
-                    ]),
-            ]);
+        return $schema->components([]);
     }
 }

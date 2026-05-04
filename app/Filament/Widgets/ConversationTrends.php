@@ -10,18 +10,25 @@ use Filament\Widgets\ChartWidget;
 
 class ConversationTrends extends ChartWidget
 {
+    protected string $view = 'filament.widgets.conversation-trends';
+
     protected ?string $heading = 'Conversation Trends';
 
     protected ?string $description = 'Last 7 days of sessions and leads for this company.';
 
     protected string $color = 'primary';
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'md' => 8,
         'xl' => 8,
     ];
 
     protected ?string $maxHeight = '320px';
+
+    public static function canView(): bool
+    {
+        return ! auth()->user()?->isSuperAdmin();
+    }
 
     protected function getType(): string
     {
@@ -61,21 +68,81 @@ class ConversationTrends extends ChartWidget
                 [
                     'label' => 'Chat Sessions',
                     'data' => $sessionData,
-                    'borderColor' => '#d97706',
-                    'backgroundColor' => 'rgba(217, 119, 6, 0.15)',
+                    'borderColor' => '#d3033d',
+                    'backgroundColor' => 'rgba(211, 3, 61, 0.24)',
+                    'pointBackgroundColor' => '#d3033d',
+                    'pointBorderColor' => '#ffffff',
+                    'pointHoverBackgroundColor' => '#d3033d',
+                    'pointHoverBorderColor' => '#ffffff',
+                    'fill' => true,
                 ],
                 [
                     'label' => 'Leads',
                     'data' => $leadData,
-                    'borderColor' => '#0f766e',
-                    'backgroundColor' => 'rgba(15, 118, 110, 0.15)',
+                    'borderColor' => '#f59e0b',
+                    'backgroundColor' => 'rgba(245, 158, 11, 0.24)',
+                    'pointBackgroundColor' => '#f59e0b',
+                    'pointBorderColor' => '#ffffff',
+                    'pointHoverBackgroundColor' => '#f59e0b',
+                    'pointHoverBorderColor' => '#ffffff',
+                    'fill' => true,
                 ],
             ],
             'labels' => $labels,
         ];
     }
 
-    protected function getOptions(): array | RawJs | null
+    /**
+     * @return array<int, array{label: string, value: string, tone: string}>
+     */
+    public function getTrendSummary(): array
+    {
+        $data = $this->getCachedData();
+        $labels = $data['labels'] ?? [];
+        $sessionData = $data['datasets'][0]['data'] ?? [];
+        $leadData = $data['datasets'][1]['data'] ?? [];
+
+        $sessionTotal = array_sum($sessionData);
+        $leadTotal = array_sum($leadData);
+        $conversionRate = $sessionTotal > 0 ? round(($leadTotal / $sessionTotal) * 100, 1) : 0;
+
+        $busiestIndex = 0;
+        $busiestValue = -1;
+
+        foreach ($labels as $index => $label) {
+            $combined = ($sessionData[$index] ?? 0) + ($leadData[$index] ?? 0);
+
+            if ($combined > $busiestValue) {
+                $busiestValue = $combined;
+                $busiestIndex = $index;
+            }
+        }
+
+        return [
+            [
+                'label' => '7-Day Sessions',
+                'value' => (string) $sessionTotal,
+                'tone' => 'amber',
+            ],
+            [
+                'label' => '7-Day Leads',
+                'value' => (string) $leadTotal,
+                'tone' => 'teal',
+            ],
+            [
+                'label' => 'Conversion',
+                'value' => $conversionRate.'%',
+                'tone' => $conversionRate >= 10 ? 'rose' : 'slate',
+            ],
+            [
+                'label' => 'Busiest Day',
+                'value' => $labels[$busiestIndex] ?? 'No data',
+                'tone' => 'slate',
+            ],
+        ];
+    }
+
+    protected function getOptions(): array|RawJs|null
     {
         return [
             'animation' => [
@@ -84,13 +151,18 @@ class ConversationTrends extends ChartWidget
             ],
             'elements' => [
                 'line' => [
-                    'borderWidth' => 3,
-                    'tension' => 0.35,
+                    'borderWidth' => 4,
+                    'tension' => 0.44,
                 ],
                 'point' => [
-                    'radius' => 0,
-                    'hoverRadius' => 5,
+                    'radius' => 4,
+                    'hoverRadius' => 7,
+                    'hoverBorderWidth' => 3,
                 ],
+            ],
+            'interaction' => [
+                'intersect' => false,
+                'mode' => 'index',
             ],
             'maintainAspectRatio' => false,
             'plugins' => [
@@ -99,8 +171,22 @@ class ConversationTrends extends ChartWidget
                     'labels' => [
                         'boxWidth' => 10,
                         'boxHeight' => 10,
+                        'padding' => 18,
                         'useBorderRadius' => true,
+                        'borderRadius' => 999,
+                        'font' => [
+                            'size' => 12,
+                            'weight' => 600,
+                        ],
                     ],
+                ],
+                'tooltip' => [
+                    'backgroundColor' => '#0f172a',
+                    'bodySpacing' => 6,
+                    'cornerRadius' => 14,
+                    'displayColors' => true,
+                    'padding' => 12,
+                    'titleMarginBottom' => 8,
                 ],
             ],
             'scales' => [
@@ -108,14 +194,25 @@ class ConversationTrends extends ChartWidget
                     'grid' => [
                         'display' => false,
                     ],
+                    'ticks' => [
+                        'padding' => 10,
+                    ],
+                    'border' => [
+                        'display' => false,
+                    ],
                 ],
                 'y' => [
                     'beginAtZero' => true,
                     'grid' => [
-                        'color' => 'rgba(148, 163, 184, 0.12)',
+                        'color' => 'rgba(211, 3, 61, 0.08)',
+                        'drawBorder' => false,
                     ],
                     'ticks' => [
+                        'padding' => 10,
                         'precision' => 0,
+                    ],
+                    'border' => [
+                        'display' => false,
                     ],
                 ],
             ],

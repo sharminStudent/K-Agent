@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Agent;
 use App\Models\KnowledgeFile;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -14,22 +15,23 @@ class KnowledgeService
 {
     public function __construct(
         protected AgentService $agentService,
+        protected ActivityLogService $activityLogService,
         protected EmbeddingService $embeddingService,
         protected VectorStoreService $vectorStoreService,
-    ) {
-    }
+    ) {}
 
     public function storeUploadedFile(array $data, UploadedFile $uploadedFile): KnowledgeFile
     {
         $agent = $this->agentService->resolveActiveAgentByWidgetToken($data['widget_token']);
+        $currentUser = auth()->user();
         $disk = config('filesystems.default', 'local');
         $directory = 'knowledge-files/'.$agent->id;
         $filename = Str::uuid()->toString().'-'.$uploadedFile->getClientOriginalName();
         $path = $uploadedFile->storeAs($directory, $filename, $disk);
         $storedSize = Storage::disk($disk)->size($path);
 
-        return DB::transaction(function () use ($agent, $uploadedFile, $path, $disk, $data, $storedSize): KnowledgeFile {
-            return KnowledgeFile::query()->create([
+        return DB::transaction(function () use ($agent, $uploadedFile, $path, $disk, $data, $storedSize, $currentUser): KnowledgeFile {
+            $knowledgeFile = KnowledgeFile::query()->create([
                 'agent_id' => $agent->id,
                 'disk' => $disk,
                 'path' => $path,
@@ -41,6 +43,67 @@ class KnowledgeService
                     'uploaded_extension' => $uploadedFile->getClientOriginalExtension(),
                 ]),
             ]);
+
+            $this->activityLogService->log(
+                event: 'knowledge.uploaded',
+                description: 'A knowledge file was uploaded.',
+                category: 'admin',
+                agent: $agent,
+                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                subject: $knowledgeFile,
+                meta: [
+                    'summary' => $knowledgeFile->original_name,
+                ],
+            );
+
+            return $knowledgeFile;
+        });
+    }
+
+    public function storeTextKnowledge(array $data, string $title, string $description): KnowledgeFile
+    {
+        $agent = $this->agentService->resolveActiveAgentByWidgetToken($data['widget_token']);
+        $currentUser = auth()->user();
+        $disk = config('filesystems.default', 'local');
+        $directory = 'knowledge-files/'.$agent->id;
+        $filename = Str::uuid()->toString().'-'.Str::slug($title ?: 'additional-info').'.txt';
+        $path = $directory.'/'.$filename;
+        $content = trim("Title: {$title}\n\nDescription:\n{$description}");
+
+        Storage::disk($disk)->put($path, $content);
+
+        $storedSize = Storage::disk($disk)->size($path);
+
+        return DB::transaction(function () use ($agent, $title, $description, $path, $disk, $data, $storedSize, $currentUser): KnowledgeFile {
+            $knowledgeFile = KnowledgeFile::query()->create([
+                'agent_id' => $agent->id,
+                'disk' => $disk,
+                'path' => $path,
+                'original_name' => $title.'.txt',
+                'mime_type' => 'text/plain',
+                'size' => $storedSize,
+                'status' => 'pending',
+                'meta' => array_merge($data['meta'] ?? [], [
+                    'source' => 'additional_info',
+                    'title' => $title,
+                    'description' => $description,
+                    'uploaded_extension' => 'txt',
+                ]),
+            ]);
+
+            $this->activityLogService->log(
+                event: 'knowledge.text_created',
+                description: 'A text knowledge entry was created.',
+                category: 'admin',
+                agent: $agent,
+                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                subject: $knowledgeFile,
+                meta: [
+                    'summary' => $title,
+                ],
+            );
+
+            return $knowledgeFile;
         });
     }
 
@@ -52,7 +115,79 @@ class KnowledgeService
             throw new ModelNotFoundException('Knowledge file not found for the provided widget token.');
         }
 
+        return $this->processKnowledgeFileForAgent($knowledgeFile, $agent);
+    }
+
+    public function updateTextKnowledge(KnowledgeFile $knowledgeFile, Agent $agent, string $title, string $description): KnowledgeFile
+    {
+        if ($knowledgeFile->agent_id !== $agent->id) {
+            throw new ModelNotFoundException('Knowledge file not found for the provided agent.');
+        }
+
+        $content = trim("Title: {$title}\n\nDescription:\n{$description}");
+        $disk = Storage::disk($knowledgeFile->disk);
+
+        return DB::transaction(function () use ($agent, $content, $description, $disk, $knowledgeFile, $title): KnowledgeFile {
+            $currentUser = auth()->user();
+            $this->removeProcessingArtifacts($knowledgeFile);
+
+            $disk->put($knowledgeFile->path, $content);
+
+            $knowledgeFile->forceFill([
+                'original_name' => $title.'.txt',
+                'size' => $disk->size($knowledgeFile->path),
+                'status' => 'pending',
+                'ingested_at' => null,
+                'meta' => array_merge($knowledgeFile->meta ?? [], [
+                    'source' => 'additional_info',
+                    'title' => $title,
+                    'description' => $description,
+                    'uploaded_extension' => 'txt',
+                    'processing_error' => null,
+                ]),
+            ])->save();
+
+            $updatedKnowledgeFile = $this->processKnowledgeFileForAgent($knowledgeFile->fresh(), $agent);
+
+            $this->activityLogService->log(
+                event: 'knowledge.updated',
+                description: 'A text knowledge entry was updated.',
+                category: 'admin',
+                agent: $agent,
+                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                subject: $updatedKnowledgeFile,
+                meta: [
+                    'summary' => $title,
+                ],
+            );
+
+            return $updatedKnowledgeFile;
+        });
+    }
+
+    public function previewKnowledgeFile(KnowledgeFile $knowledgeFile): string
+    {
+        $processedTextPath = $knowledgeFile->meta['processed_text_path'] ?? null;
+
+        if (is_string($processedTextPath) && $processedTextPath !== '') {
+            $disk = Storage::disk($knowledgeFile->disk);
+
+            if ($disk->exists($processedTextPath)) {
+                return trim((string) $disk->get($processedTextPath));
+            }
+        }
+
+        try {
+            return $this->extractText($knowledgeFile);
+        } catch (\Throwable) {
+            return 'Preview is not available for this file yet. Process the file first to generate readable content.';
+        }
+    }
+
+    protected function processKnowledgeFileForAgent(KnowledgeFile $knowledgeFile, Agent $agent): KnowledgeFile
+    {
         return DB::transaction(function () use ($knowledgeFile, $agent): KnowledgeFile {
+            $currentUser = auth()->user();
             $knowledgeFile->forceFill([
                 'status' => 'processing',
             ])->save();
@@ -61,7 +196,7 @@ class KnowledgeService
                 $text = $this->extractText($knowledgeFile);
                 $chunks = $this->chunkText($text);
                 $this->storeProcessingArtifacts($knowledgeFile, $text, $chunks);
-                $this->storeEmbeddings($knowledgeFile, $chunks, $agent);
+                $embeddingMeta = $this->storeEmbeddings($knowledgeFile, $chunks, $agent);
 
                 $knowledgeFile->forceFill([
                     'status' => 'ready',
@@ -70,8 +205,24 @@ class KnowledgeService
                         'chunk_count' => count($chunks),
                         'extracted_characters' => mb_strlen($text),
                         'processing_error' => null,
+                        ...$embeddingMeta,
                     ]),
                 ])->save();
+
+                if (! $this->isAdditionalInfoKnowledge($knowledgeFile)) {
+                    $this->activityLogService->log(
+                        event: 'knowledge.processed',
+                        description: 'A knowledge file was processed successfully.',
+                        category: 'admin',
+                        agent: $agent,
+                        user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                        subject: $knowledgeFile,
+                        meta: [
+                            'summary' => $knowledgeFile->original_name,
+                            'chunk_count' => count($chunks),
+                        ],
+                    );
+                }
             } catch (\Throwable $exception) {
                 $knowledgeFile->forceFill([
                     'status' => 'failed',
@@ -80,6 +231,19 @@ class KnowledgeService
                     ]),
                 ])->save();
 
+                $this->activityLogService->log(
+                    event: 'knowledge.processing_failed',
+                    description: 'A knowledge file failed during processing.',
+                    category: 'admin',
+                    agent: $agent,
+                    user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                    subject: $knowledgeFile,
+                    meta: [
+                        'summary' => $knowledgeFile->original_name,
+                        'error' => $exception->getMessage(),
+                    ],
+                );
+
                 throw $exception;
             }
 
@@ -87,38 +251,107 @@ class KnowledgeService
         });
     }
 
+    public function deleteKnowledgeFile(KnowledgeFile $knowledgeFile, Agent $agent): void
+    {
+        if ($knowledgeFile->agent_id !== $agent->id) {
+            throw new ModelNotFoundException('Knowledge file not found for the provided agent.');
+        }
+
+        DB::transaction(function () use ($knowledgeFile): void {
+            $currentUser = auth()->user();
+            $disk = Storage::disk($knowledgeFile->disk);
+            $this->removeProcessingArtifacts($knowledgeFile);
+
+            if ($disk->exists($knowledgeFile->path)) {
+                $disk->delete($knowledgeFile->path);
+            }
+
+            $this->activityLogService->log(
+                event: 'knowledge.deleted',
+                description: 'A knowledge file was deleted.',
+                category: 'admin',
+                agent: $knowledgeFile->agent,
+                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                subject: $knowledgeFile,
+                meta: [
+                    'summary' => $knowledgeFile->original_name,
+                ],
+            );
+
+            $knowledgeFile->delete();
+        });
+    }
+
+    protected function removeProcessingArtifacts(KnowledgeFile $knowledgeFile): void
+    {
+        $disk = Storage::disk($knowledgeFile->disk);
+        $meta = $knowledgeFile->meta ?? [];
+
+        $this->vectorStoreService->deleteKnowledgeEmbeddings($knowledgeFile);
+
+        $paths = collect([
+            $meta['processed_text_path'] ?? null,
+            $meta['processed_chunks_path'] ?? null,
+        ])
+            ->filter(fn ($path): bool => is_string($path) && $path !== '')
+            ->unique()
+            ->all();
+
+        foreach ($paths as $path) {
+            if ($disk->exists($path)) {
+                $disk->delete($path);
+            }
+        }
+    }
+
+    protected function isAdditionalInfoKnowledge(KnowledgeFile $knowledgeFile): bool
+    {
+        return data_get($knowledgeFile->meta, 'source') === 'additional_info';
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $chunks
      */
-    protected function storeEmbeddings(KnowledgeFile $knowledgeFile, array $chunks, \App\Models\Agent $agent): void
+    protected function storeEmbeddings(KnowledgeFile $knowledgeFile, array $chunks, Agent $agent): array
     {
         if (! $this->embeddingService->isConfigured($agent)) {
-            $knowledgeFile->forceFill([
-                'meta' => array_merge($knowledgeFile->meta ?? [], [
-                    'embeddings_status' => 'skipped',
-                    'embeddings_path' => null,
-                    'vector_backend' => null,
-                    'vector_collection' => null,
-                    'vector_point_ids' => [],
-                ]),
-            ])->save();
-
-            return;
+            return [
+                'embeddings_status' => 'skipped',
+                'embeddings_path' => null,
+                'vector_backend' => null,
+                'vector_collection' => null,
+                'vector_point_ids' => [],
+                'embedding_count' => 0,
+                'embeddings_error' => null,
+            ];
         }
 
-        $embeddings = $this->embeddingService->embedMany(array_column($chunks, 'content'), $agent);
-        $stored = $this->vectorStoreService->storeKnowledgeEmbeddings($knowledgeFile, $chunks, $embeddings);
+        try {
+            $embeddings = $this->embeddingService->embedMany(array_column($chunks, 'content'), $agent);
+            $stored = $this->vectorStoreService->storeKnowledgeEmbeddings($knowledgeFile, $chunks, $embeddings);
 
-        $knowledgeFile->forceFill([
-            'meta' => array_merge($knowledgeFile->meta ?? [], [
+            return [
                 'embeddings_status' => 'ready',
                 'embeddings_path' => $stored['path'],
                 'embedding_count' => $stored['count'],
                 'vector_backend' => $stored['backend'],
                 'vector_collection' => $stored['collection'],
                 'vector_point_ids' => $stored['point_ids'],
-            ]),
-        ])->save();
+                'embeddings_error' => null,
+            ];
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return [
+                'embeddings_status' => 'failed',
+                'embeddings_path' => null,
+                'vector_backend' => null,
+                'vector_collection' => null,
+                'vector_point_ids' => [],
+                'embedding_count' => 0,
+                'embeddings_error' => $exception->getMessage(),
+            ];
+        }
     }
 
     protected function extractText(KnowledgeFile $knowledgeFile): string
@@ -237,7 +470,7 @@ class KnowledgeService
 
     protected function extractDocxText(string $path): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
 
         if ($zip->open($path) !== true) {
             throw new \RuntimeException('Unable to open DOCX file for text extraction.');

@@ -27,7 +27,7 @@
     </style>
     <script>
         window.kAgentReverb = {
-            enabled: @js(filled(config('broadcasting.connections.reverb.key'))),
+            enabled: @js(config('broadcasting.default') === 'reverb' && filled(config('broadcasting.connections.reverb.key'))),
             key: @js(config('broadcasting.connections.reverb.key')),
             host: @js(config('broadcasting.connections.reverb.options.host') ?: request()->getHost()),
             port: @js((int) (config('broadcasting.connections.reverb.options.port') ?: 8080)),

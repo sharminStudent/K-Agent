@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Lead;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,10 +13,15 @@ class RecentLeadsTable extends TableWidget
 {
     protected static bool $isLazy = false;
 
-    protected int | string | array $columnSpan = [
+    protected int|string|array $columnSpan = [
         'md' => 6,
         'xl' => 6,
     ];
+
+    public static function canView(): bool
+    {
+        return ! auth()->user()?->isSuperAdmin();
+    }
 
     public function table(Table $table): Table
     {
@@ -23,14 +29,23 @@ class RecentLeadsTable extends TableWidget
             ->query(fn (): Builder => Lead::query()
                 ->where('agent_id', auth()->user()?->agent_id ?? 0)
                 ->with('chatSession')
-                ->latest())
+                ->latest()
+                ->limit(5))
             ->description('Recent company leads linked to this workspace.')
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
                     ->weight('medium'),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Unknown')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'new' => 'info',
+                        'contacted' => 'warning',
+                        'qualified' => 'success',
+                        'closed' => 'gray',
+                        default => 'danger',
+                    }),
                 TextColumn::make('email')
                     ->searchable()
                     ->toggleable(),
@@ -42,8 +57,17 @@ class RecentLeadsTable extends TableWidget
                     ->since()
                     ->label('Captured'),
             ])
+            ->filters([
+                SelectFilter::make('status')
+                    ->options([
+                        'new' => 'New',
+                        'contacted' => 'Contacted',
+                        'qualified' => 'Qualified',
+                        'closed' => 'Closed',
+                    ]),
+            ])
             ->defaultSort('created_at', 'desc')
-            ->paginated([5])
+            ->paginated(false)
             ->emptyStateHeading('No leads yet')
             ->emptyStateDescription('Leads captured from chat sessions will appear here.');
     }

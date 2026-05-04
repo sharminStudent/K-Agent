@@ -10,8 +10,9 @@ class LeadService
 {
     public function __construct(
         protected AgentService $agentService,
-    ) {
-    }
+        protected ActivityLogService $activityLogService,
+        protected UsageTrackingService $usageTrackingService,
+    ) {}
 
     public function storeLead(array $data): Lead
     {
@@ -28,7 +29,7 @@ class LeadService
         }
 
         return DB::transaction(function () use ($agent, $chatSession, $data): Lead {
-            return Lead::query()->create([
+            $lead = Lead::query()->create([
                 'agent_id' => $agent->id,
                 'chat_session_id' => $chatSession?->id,
                 'name' => $data['name'],
@@ -38,6 +39,22 @@ class LeadService
                 'notes' => $data['notes'] ?? null,
                 'meta' => $data['meta'] ?? null,
             ]);
+
+            $this->activityLogService->log(
+                event: 'lead.captured',
+                description: 'A new lead was captured from the widget.',
+                category: 'system',
+                agent: $agent,
+                subject: $lead,
+                meta: [
+                    'summary' => 'Lead: '.$lead->name.($lead->email ? ' ('.$lead->email.')' : ''),
+                    'chat_session_id' => $chatSession?->public_id,
+                ],
+            );
+
+            $this->usageTrackingService->recordLead($agent);
+
+            return $lead;
         });
     }
 }

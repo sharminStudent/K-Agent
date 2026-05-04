@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\WidgetController;
 use App\Http\Controllers\Filament\TranscriptDownloadController;
+use App\Http\Controllers\WidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {

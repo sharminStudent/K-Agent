@@ -11,8 +11,7 @@ class LeadController extends Controller
 {
     public function __construct(
         protected LeadService $leadService,
-    ) {
-    }
+    ) {}
 
     public function store(StoreLeadRequest $request): JsonResponse
     {

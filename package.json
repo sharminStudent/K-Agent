@@ -3,7 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build --configLoader native",
+        "check": "npm run build",
         "dev": "vite"
     },
     "devDependencies": {

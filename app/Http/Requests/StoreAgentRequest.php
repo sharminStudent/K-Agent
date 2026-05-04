@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\BahrainPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,6 +11,15 @@ class StoreAgentRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('support_phone')) {
+            $this->merge([
+                'support_phone' => BahrainPhone::normalizeForStorage($this->input('support_phone')),
+            ]);
+        }
     }
 
     /**
@@ -27,7 +37,7 @@ class StoreAgentRequest extends FormRequest
             'logo_path' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
             'support_email' => ['nullable', 'email', 'max:255'],
-            'support_phone' => ['nullable', 'string', 'max:50'],
+            'support_phone' => ['nullable', 'string', 'max:50', 'regex:/^\+973\s?\d{8}$/'],
             'system_prompt' => ['nullable', 'string'],
             'welcome_message' => ['nullable', 'string'],
             'fallback_message' => ['nullable', 'string'],

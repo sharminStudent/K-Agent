@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAgentRequest;
 use App\Http\Requests\UpdateAgentRequest;
 use App\Models\Agent;
+use App\Services\AgentProviderConfigService;
 use App\Services\AgentService;
 use Illuminate\Http\JsonResponse;
 
@@ -13,9 +14,8 @@ class AgentController extends Controller
 {
     public function __construct(
         protected AgentService $agentService,
-        protected \App\Services\AgentProviderConfigService $agentProviderConfigService,
-    ) {
-    }
+        protected AgentProviderConfigService $agentProviderConfigService,
+    ) {}
 
     public function store(StoreAgentRequest $request): JsonResponse
     {

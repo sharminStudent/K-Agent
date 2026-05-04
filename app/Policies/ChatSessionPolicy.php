@@ -7,6 +7,11 @@ use App\Models\User;
 
 class ChatSessionPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isSuperAdmin() ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return true;
@@ -24,11 +29,11 @@ class ChatSessionPolicy
 
     public function delete(User $user, ChatSession $chatSession): bool
     {
-        return false;
+        return $user->agent_id === $chatSession->agent_id;
     }
 
     public function deleteAny(User $user): bool
     {
-        return false;
+        return $user->agent_id !== null;
     }
 }

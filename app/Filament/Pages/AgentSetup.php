@@ -3,8 +3,13 @@
 namespace App\Filament\Pages;
 
 use App\Services\AgentService;
+use App\Support\BahrainPhone;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasMaxWidth;
 use Filament\Pages\Page;
@@ -23,7 +28,7 @@ class AgentSetup extends Page
 {
     use HasMaxWidth;
 
-    protected static string | \BackedEnum | null $navigationIcon = Heroicon::OutlinedRocketLaunch;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedRocketLaunch;
 
     protected static ?string $navigationLabel = 'Agent Setup';
 
@@ -36,7 +41,7 @@ class AgentSetup extends Page
 
     public static function canAccess(): bool
     {
-        return Filament::auth()->check();
+        return Filament::auth()->check() && ! Filament::auth()->user()?->isSuperAdmin();
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -48,6 +53,7 @@ class AgentSetup extends Page
     {
         if (Filament::auth()->user()?->agent_id !== null) {
             $this->redirect(AgentSettings::getUrl(), navigate: true);
+
             return;
         }
 
@@ -58,17 +64,17 @@ class AgentSetup extends Page
         ]);
     }
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return 'One-Time Agent Setup';
     }
 
-    public function getHeading(): string | Htmlable
+    public function getHeading(): string|Htmlable
     {
         return 'Create Your Company Agent';
     }
 
-    public function getSubheading(): string | Htmlable | null
+    public function getSubheading(): string|Htmlable|null
     {
         return 'This runs once for each company workspace. After setup, you will manage the same agent from Agent Settings.';
     }
@@ -87,45 +93,58 @@ class AgentSetup extends Page
                 Section::make('Company Agent')
                     ->description('Set up the single agent used by this company workspace.')
                     ->schema([
-                        \Filament\Forms\Components\TextInput::make('name')
-                            ->label('Agent Name')
-                            ->required()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('company_name')
+                        TextInput::make('company_name')
                             ->label('Company Name')
                             ->required()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('website_url')
+                        TextInput::make('website_url')
                             ->label('Website URL (optional)')
                             ->maxLength(255)
                             ->placeholder('Add later if needed'),
-                        \Filament\Forms\Components\TextInput::make('industry')
-                            ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('contact_email')
+                        TextInput::make('contact_email')
                             ->email()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('support_email')
+                        TextInput::make('support_email')
                             ->email()
                             ->maxLength(255),
-                        \Filament\Forms\Components\TextInput::make('support_phone')
+                        TextInput::make('support_phone')
                             ->tel()
-                            ->maxLength(255),
-                        \Filament\Forms\Components\Toggle::make('is_active')
+                            ->prefix('+973')
+                            ->inputMode('numeric')
+                            ->minLength(8)
+                            ->maxLength(8)
+                            ->placeholder('12345678')
+                            ->helperText('Enter 8 digits. Bahrain country code `+973` is added automatically.')
+                            ->rule('regex:/^\d{8}$/')
+                            ->dehydrateStateUsing(fn (?string $state): ?string => BahrainPhone::normalizeForStorage($state)),
+                        Toggle::make('is_active')
                             ->default(true),
-                        \Filament\Forms\Components\Textarea::make('company_description')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\Textarea::make('welcome_message')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\Textarea::make('fallback_message')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                        \Filament\Forms\Components\Textarea::make('system_prompt')
-                            ->rows(6)
-                            ->columnSpanFull(),
                     ])
                     ->columns(2),
+                Section::make('Assistant Persona')
+                    ->description('Define how the assistant introduces itself and how it should sound for this company.')
+                    ->schema([
+                        Placeholder::make('assistant_persona_help')
+                            ->hiddenLabel()
+                            ->content('Use this section for brand voice and assistant identity. Put company facts, pricing, FAQs, and policies into Knowledge instead of the system prompt.')
+                            ->columnSpanFull(),
+                        TextInput::make('name')
+                            ->label('Assistant Display Name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Example: K-Agent')
+                            ->helperText('This is the assistant name shown to visitors in chat.'),
+                        Textarea::make('welcome_message')
+                            ->label('Welcome Message')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Example: Hi, I am K-Agent. How can I help you today?'),
+                        Textarea::make('fallback_message')
+                            ->label('Fallback Message')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Example: I do not have enough confirmed information to answer that yet.'),
+                    ]),
             ]);
     }
 

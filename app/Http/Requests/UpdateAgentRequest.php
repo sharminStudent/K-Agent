@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Agent;
+use App\Support\BahrainPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,15 @@ class UpdateAgentRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('support_phone')) {
+            $this->merge([
+                'support_phone' => BahrainPhone::normalizeForStorage($this->input('support_phone')),
+            ]);
+        }
     }
 
     /**
@@ -31,7 +41,7 @@ class UpdateAgentRequest extends FormRequest
             'logo_path' => ['sometimes', 'nullable', 'string', 'max:255'],
             'contact_email' => ['sometimes', 'nullable', 'email', 'max:255'],
             'support_email' => ['sometimes', 'nullable', 'email', 'max:255'],
-            'support_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'support_phone' => ['sometimes', 'nullable', 'string', 'max:50', 'regex:/^\+973\s?\d{8}$/'],
             'system_prompt' => ['sometimes', 'nullable', 'string'],
             'welcome_message' => ['sometimes', 'nullable', 'string'],
             'fallback_message' => ['sometimes', 'nullable', 'string'],

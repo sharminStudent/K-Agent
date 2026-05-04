@@ -12,7 +12,12 @@ class WorkspaceUsersTable extends TableWidget
 {
     protected static bool $isLazy = false;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        return ! auth()->user()?->isSuperAdmin();
+    }
 
     public function table(Table $table): Table
     {

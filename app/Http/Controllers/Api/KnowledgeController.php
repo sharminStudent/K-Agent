@@ -13,8 +13,7 @@ class KnowledgeController extends Controller
 {
     public function __construct(
         protected KnowledgeService $knowledgeService,
-    ) {
-    }
+    ) {}
 
     public function store(StoreKnowledgeFileRequest $request): JsonResponse
     {

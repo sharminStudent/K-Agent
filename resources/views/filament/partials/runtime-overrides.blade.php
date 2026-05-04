@@ -95,28 +95,6 @@
         color: #f5f5f5 !important;
     }
 
-    :root:not(.dark) .fi-btn.fi-btn-color-primary,
-    :root:not(.dark) .fi-btn-color-primary,
-    :root:not(.dark) button.fi-btn-color-primary,
-    :root:not(.dark) a.fi-btn-color-primary,
-    :root:not(.dark) .fi-btn[type='submit'] {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-    }
-
-    :root:not(.dark) .fi-btn.fi-btn-color-primary *,
-    :root:not(.dark) .fi-btn-color-primary *,
-    :root:not(.dark) button.fi-btn-color-primary *,
-    :root:not(.dark) a.fi-btn-color-primary *,
-    :root:not(.dark) .fi-btn[type='submit'] *,
-    :root:not(.dark) .fi-btn[type='submit'] span {
-        color: #ffffff !important;
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        opacity: 1 !important;
-    }
-
     .fi-simple-layout {
         background:
             linear-gradient(rgba(4, 13, 31, 0.45), rgba(4, 13, 31, 0.68)),
@@ -192,4 +170,137 @@
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
+
+    .ka-logout-nav-item .fi-sidebar-item-btn,
+    .ka-logout-nav-item .fi-sidebar-item-label,
+    .ka-logout-nav-item .fi-sidebar-item-icon {
+        color: #dc2626 !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .fi-section {
+        background:
+            radial-gradient(circle at top left, rgba(211, 3, 61, 0.18), transparent 30%),
+            radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 26%),
+            linear-gradient(180deg, #fff7fa 0%, #fffdf8 52%, #ffffff 100%) !important;
+        border-color: rgba(211, 3, 61, 0.22) !important;
+        box-shadow: 0 22px 48px rgba(211, 3, 61, 0.08) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .fi-section-content {
+        background: transparent !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .fi-section-header-heading,
+    :root:not(.dark) .ka-analytics-widget .fi-section-header-description,
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-value {
+        color: #111827 !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill {
+        border-color: rgba(211, 3, 61, 0.1) !important;
+        background: rgba(255, 255, 255, 0.78) !important;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-label {
+        color: #64748b !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-amber {
+        border-color: rgba(245, 158, 11, 0.32) !important;
+        background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 255, 255, 0.9)) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-amber .ka-analytics-pill-label {
+        color: #d97706 !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-teal {
+        border-color: rgba(211, 3, 61, 0.18) !important;
+        background: linear-gradient(180deg, rgba(255, 241, 242, 0.98), rgba(255, 255, 255, 0.9)) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-teal .ka-analytics-pill-label {
+        color: #d3033d !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-rose {
+        border-color: rgba(251, 113, 133, 0.3) !important;
+        background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(255, 255, 255, 0.92)) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-rose .ka-analytics-pill-label {
+        color: #e11d48 !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-pill-slate {
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 0.92)) !important;
+    }
+
+    :root:not(.dark) .ka-analytics-widget .ka-analytics-canvas-ctn {
+        background:
+            radial-gradient(circle at top left, rgba(211, 3, 61, 0.08), transparent 32%),
+            radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 28%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 251, 252, 0.94)) !important;
+        border-color: rgba(211, 3, 61, 0.12) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(211, 3, 61, 0.05) !important;
+    }
+
+    :root.dark .ka-analytics-widget .fi-section {
+        background:
+            radial-gradient(circle at top left, rgba(211, 3, 61, 0.34), transparent 28%),
+            radial-gradient(circle at top right, rgba(245, 158, 11, 0.28), transparent 24%),
+            linear-gradient(135deg, #111827 0%, #020617 52%, #172033 100%) !important;
+        border-color: rgba(211, 3, 61, 0.24) !important;
+    }
+
+    :root.dark .ka-analytics-widget .fi-section-content {
+        background: transparent !important;
+    }
+
+    :root.dark .ka-analytics-widget .ka-analytics-pill {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        box-shadow: none !important;
+    }
+
+    :root.dark .ka-analytics-widget .ka-analytics-canvas-ctn {
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+            rgba(2, 6, 23, 0.32) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    }
 </style>
+
+<form method="POST" action="{{ \Filament\Facades\Filament::getLogoutUrl() }}">
+    @csrf
+
+    <x-filament::modal
+        id="company-logout-confirmation"
+        heading="Log out"
+        description="Are you sure you want to log out of this control panel?"
+        :close-button="true"
+        width="sm"
+    >
+        <x-slot name="footer">
+            <div class="fi-modal-footer-actions flex w-full justify-end">
+                <x-filament::button
+                    type="button"
+                    color="gray"
+                    x-on:click="$dispatch('close-modal', { id: 'company-logout-confirmation' })"
+                >
+                    Cancel
+                </x-filament::button>
+
+                <x-filament::button type="submit">
+                    Logout
+                </x-filament::button>
+            </div>
+        </x-slot>
+    </x-filament::modal>
+</form>

@@ -11,8 +11,7 @@ class AiTesterService
         protected PromptBuilderService $promptBuilderService,
         protected OpenAiChatService $openAiChatService,
         protected GuardrailService $guardrailService,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -24,7 +23,7 @@ class AiTesterService
             default => $this->retrievalService->retrieveRelevantChunks($agent, $message),
         };
 
-        if (($scenario === 'no_context') || $this->guardrailService->shouldUseFallback($contextChunks)) {
+        if (($scenario === 'no_context') || $this->guardrailService->shouldUseFallback($contextChunks, $message)) {
             return [
                 'scenario' => $scenario,
                 'source' => $scenario === 'no_context' ? 'forced_guardrail_no_context' : 'fallback',

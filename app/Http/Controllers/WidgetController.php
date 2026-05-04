@@ -6,6 +6,7 @@ use App\Models\ChatSession;
 use App\Models\KnowledgeFile;
 use App\Services\AgentService;
 use App\Services\RetrievalService;
+use App\Support\WorkspaceBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,8 +18,7 @@ class WidgetController extends Controller
     public function __construct(
         protected AgentService $agentService,
         protected RetrievalService $retrievalService,
-    ) {
-    }
+    ) {}
 
     public function script(string $widgetToken): Response
     {
@@ -33,6 +33,9 @@ class WidgetController extends Controller
 
         return response($content, 200, [
             'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 
@@ -45,8 +48,8 @@ class WidgetController extends Controller
             'bootstrapUrl' => route('widget.bootstrap', $agent->widget_token),
             'helpUrl' => route('widget.help', $agent->widget_token),
             'helpArticleBaseUrl' => url('/widget/'.$agent->widget_token.'/help'),
-            'lightLogoUrl' => $agent->light_logo_url ?: $agent->logo_url ?: asset('images/fix.png'),
-            'darkLogoUrl' => $agent->dark_logo_url ?: $agent->logo_url ?: asset('images/login_logo.png'),
+            'lightLogoUrl' => WorkspaceBranding::lightLogoUrl(),
+            'darkLogoUrl' => WorkspaceBranding::darkLogoUrl(),
         ]);
     }
 
@@ -83,12 +86,12 @@ class WidgetController extends Controller
                 'agent' => [
                     'name' => $agent->name,
                     'company_name' => $agent->company_name,
-                    'welcome_message' => $agent->welcome_message ?: 'Hi there. How can we help today?',
+                    'welcome_message' => $agent->welcome_message,
                     'fallback_message' => $agent->fallback_message ?: 'I do not have enough information to answer that yet.',
                     'support_email' => $agent->support_email,
                     'support_phone' => $agent->support_phone,
-                    'light_logo_url' => $agent->light_logo_url ?: $agent->logo_url ?: asset('images/fix.png'),
-                    'dark_logo_url' => $agent->dark_logo_url ?: $agent->logo_url ?: asset('images/login_logo.png'),
+                    'light_logo_url' => WorkspaceBranding::lightLogoUrl(),
+                    'dark_logo_url' => WorkspaceBranding::darkLogoUrl(),
                 ],
                 'session' => $chatSession ? [
                     'session_id' => $chatSession->public_id,
