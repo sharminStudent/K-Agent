@@ -13,7 +13,7 @@ Status values:
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 1.1 | Laravel project created | Done | Base Laravel app exists |
-| 1.2 | PHP version aligned with the active runtime (PHP 8.5) | Done | Repository is now aligned to the current PHP 8.5 runtime in Composer and CI |
+| 1.2 | PHP version aligned with deployment runtime (PHP 8.4) | Done | Repository is aligned with the current Railway PHP 8.4 runtime in Composer and CI |
 | 1.3 | PostgreSQL configured | Done | `.env` uses PostgreSQL and migrations ran successfully |
 | 1.4 | `.env` configured for K-Agent services | In Progress | `.env` exists, project-specific setup still missing |
 | 1.5 | Vite installed and working | Done | Present |

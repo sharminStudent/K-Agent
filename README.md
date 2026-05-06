@@ -13,7 +13,7 @@ The current repository includes:
 ## Stack
 
 - Laravel 13
-- PHP 8.5+
+- PHP 8.4+
 - PostgreSQL
 - Filament 5
 - Livewire 4
