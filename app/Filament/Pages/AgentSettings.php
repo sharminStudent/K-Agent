@@ -8,6 +8,7 @@ use App\Support\BahrainPhone;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TextInput as FormsTextInput;
@@ -73,6 +74,7 @@ class AgentSettings extends Page
             'welcome_message' => $this->agentRecord->welcome_message,
             'fallback_message' => $this->agentRecord->fallback_message,
             'privacy_url' => $this->agentRecord->settings['privacy_url'] ?? null,
+            'help_center_items' => $this->agentRecord->settings['help_center_items'] ?? [],
             'is_active' => $this->agentRecord->is_active,
         ]);
     }
@@ -157,6 +159,26 @@ class AgentSettings extends Page
                             )),
                     ])
                     ->columns(1),
+                Section::make('Help Center Section')
+                    ->description('This section will be displayed in the widget Help screen.')
+                    ->schema([
+                        Repeater::make('help_center_items')
+                            ->label('Help Center Articles')
+                            ->defaultItems(1)
+                            ->reorderable(false)
+                            ->addActionLabel('Add help article')
+                            ->schema([
+                                TextInput::make('title')
+                                    ->label('Title')
+                                    ->maxLength(255),
+                                Textarea::make('description')
+                                    ->label('Description')
+                                    ->rows(4)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(1)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -188,11 +210,36 @@ class AgentSettings extends Page
 
         /** @var array<string, mixed> $state */
         $state = $this->form->getState();
+        $helpCenterItems = collect($state['help_center_items'] ?? [])
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->map(fn (array $item): array => [
+                'title' => trim((string) ($item['title'] ?? '')),
+                'description' => trim((string) ($item['description'] ?? '')),
+            ]);
+
+        $hasIncompleteHelpCenterItem = $helpCenterItems->contains(
+            fn (array $item): bool => $item['title'] === '' || $item['description'] === ''
+        );
+
+        $validHelpCenterItems = $helpCenterItems
+            ->filter(fn (array $item): bool => $item['title'] !== '' && $item['description'] !== '')
+            ->values();
+
+        if ($hasIncompleteHelpCenterItem || $validHelpCenterItems->isEmpty()) {
+            Notification::make()
+                ->danger()
+                ->title('Help Center section is incomplete')
+                ->body('Add at least one Help Center item with both a title and description.')
+                ->send();
+
+            return;
+        }
 
         $state['settings'] = array_filter([
             'privacy_url' => $state['privacy_url'] ?? null,
+            'help_center_items' => $validHelpCenterItems->all(),
         ], fn (mixed $value): bool => filled($value));
-        unset($state['privacy_url']);
+        unset($state['privacy_url'], $state['help_center_items']);
 
         $agentService->updateAgent($agent, $state);
 

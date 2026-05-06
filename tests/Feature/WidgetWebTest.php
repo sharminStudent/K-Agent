@@ -5,10 +5,7 @@ namespace Tests\Feature;
 use App\Models\Agent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
-use App\Models\KnowledgeFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class WidgetWebTest extends TestCase
@@ -161,88 +158,45 @@ class WidgetWebTest extends TestCase
 
     public function test_it_lists_help_articles_for_ready_knowledge_files(): void
     {
-        Storage::fake('local');
-
         $agent = Agent::query()->create([
             'name' => 'Support Agent',
             'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
-        ]);
-
-        Storage::disk('local')->put('knowledge-processed/1/article-text.txt', 'This article explains pricing, onboarding, and support options.');
-
-        KnowledgeFile::query()->create([
-            'agent_id' => $agent->id,
-            'disk' => 'local',
-            'path' => 'knowledge-files/1/pricing.txt',
-            'original_name' => 'Pricing FAQ',
-            'mime_type' => 'text/plain',
-            'size' => 100,
-            'status' => 'ready',
-            'ingested_at' => now(),
-            'meta' => [
-                'processed_text_path' => 'knowledge-processed/1/article-text.txt',
+            'settings' => [
+                'help_center_items' => [
+                    [
+                        'title' => 'Pricing FAQ',
+                        'description' => 'This article explains pricing, onboarding, and support options.',
+                    ],
+                ],
             ],
         ]);
 
         $response = $this->getJson('/widget/'.$agent->widget_token.'/help');
 
         $response->assertOk()
-            ->assertJsonPath('data.articles.0.title', 'Pricing FAQ');
+            ->assertJsonPath('data.articles.0.title', 'Pricing FAQ')
+            ->assertJsonPath('data.articles.0.excerpt', 'This article explains pricing, onboarding, and support options.');
     }
 
-    public function test_it_searches_help_articles_through_qdrant_when_configured(): void
+    public function test_it_searches_help_articles_from_agent_help_center_items(): void
     {
-        config()->set('services.openai.api_key', 'test-key');
-        config()->set('services.openai.embedding_model', 'text-embedding-3-small');
-        config()->set('services.openai.base_url', 'https://api.openai.com/v1');
-        config()->set('services.qdrant.url', 'http://qdrant.test');
-        config()->set('services.qdrant.collection', 'k_agent_test');
-
         $agent = Agent::query()->create([
             'name' => 'Support Agent',
             'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
-        ]);
-
-        $knowledgeFile = KnowledgeFile::query()->create([
-            'agent_id' => $agent->id,
-            'disk' => 'local',
-            'path' => 'knowledge-files/'.$agent->id.'/onboarding.txt',
-            'original_name' => 'Onboarding Guide',
-            'mime_type' => 'text/plain',
-            'size' => 100,
-            'status' => 'ready',
-            'ingested_at' => now(),
-            'meta' => [
-                'vector_backend' => 'qdrant',
-                'vector_collection' => 'k_agent_test',
-            ],
-        ]);
-
-        Http::fake([
-            'https://api.openai.com/v1/embeddings' => Http::response([
-                'data' => [
-                    ['index' => 0, 'embedding' => [0.11, 0.22, 0.33]],
-                ],
-            ]),
-            'http://qdrant.test/collections/k_agent_test/points/query' => Http::response([
-                'result' => [
-                    'points' => [
-                        [
-                            'id' => 'point-1',
-                            'score' => 0.97,
-                            'payload' => [
-                                'agent_id' => $agent->id,
-                                'knowledge_file_id' => $knowledgeFile->id,
-                                'knowledge_file_name' => 'Onboarding Guide',
-                                'chunk_index' => 0,
-                                'content' => 'Acme onboarding takes two business days with setup support.',
-                            ],
-                        ],
+            'settings' => [
+                'help_center_items' => [
+                    [
+                        'title' => 'Onboarding Guide',
+                        'description' => 'Acme onboarding takes two business days with setup support.',
+                    ],
+                    [
+                        'title' => 'Support Hours',
+                        'description' => 'Our support team is available Sunday to Thursday.',
                     ],
                 ],
-            ]),
+            ],
         ]);
 
         $response = $this->getJson('/widget/'.$agent->widget_token.'/help?q=onboarding');
@@ -250,37 +204,25 @@ class WidgetWebTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.articles.0.title', 'Onboarding Guide')
             ->assertJsonPath('data.articles.0.excerpt', 'Acme onboarding takes two business days with setup support.');
-
-        Http::assertSent(fn ($request) => $request->url() === 'http://qdrant.test/collections/k_agent_test/points/query');
     }
 
     public function test_it_returns_help_article_content_for_the_correct_agent(): void
     {
-        Storage::fake('local');
-
         $agent = Agent::query()->create([
             'name' => 'Support Agent',
             'company_name' => 'Acme Demo',
             'widget_token' => 'demo-widget-token',
-        ]);
-
-        Storage::disk('local')->put('knowledge-processed/1/article-text.txt', 'Full article body for the widget help reader.');
-
-        $knowledgeFile = KnowledgeFile::query()->create([
-            'agent_id' => $agent->id,
-            'disk' => 'local',
-            'path' => 'knowledge-files/1/article.txt',
-            'original_name' => 'Help Article',
-            'mime_type' => 'text/plain',
-            'size' => 100,
-            'status' => 'ready',
-            'ingested_at' => now(),
-            'meta' => [
-                'processed_text_path' => 'knowledge-processed/1/article-text.txt',
+            'settings' => [
+                'help_center_items' => [
+                    [
+                        'title' => 'Help Article',
+                        'description' => 'Full article body for the widget help reader.',
+                    ],
+                ],
             ],
         ]);
 
-        $response = $this->getJson('/widget/'.$agent->widget_token.'/help/'.$knowledgeFile->id);
+        $response = $this->getJson('/widget/'.$agent->widget_token.'/help/1');
 
         $response->assertOk()
             ->assertJsonPath('data.article.title', 'Help Article')

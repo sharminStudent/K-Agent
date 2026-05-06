@@ -3,21 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatSession;
-use App\Models\KnowledgeFile;
 use App\Services\AgentService;
-use App\Services\RetrievalService;
 use App\Support\WorkspaceBranding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class WidgetController extends Controller
 {
     public function __construct(
         protected AgentService $agentService,
-        protected RetrievalService $retrievalService,
     ) {}
 
     public function script(string $widgetToken): Response
@@ -114,51 +110,23 @@ class WidgetController extends Controller
     {
         $agent = $this->agentService->resolveActiveAgentByWidgetToken($widgetToken);
         $query = trim((string) $request->query('q', ''));
+        $articles = collect($this->helpCenterArticles($agent))
+            ->when(
+                $query !== '',
+                fn ($collection) => $collection->filter(function (array $article) use ($query): bool {
+                    $haystack = mb_strtolower($article['title'].' '.$article['content']);
 
-        if ($query !== '') {
-            $matches = $this->retrievalService->retrieveRelevantChunks($agent, $query, 8);
-            $knowledgeFiles = KnowledgeFile::query()
-                ->where('agent_id', $agent->id)
-                ->whereIn('id', collect($matches)->pluck('knowledge_file_id')->filter()->unique()->all())
-                ->get()
-                ->keyBy('id');
-
-            $articles = collect($matches)
-                ->groupBy('knowledge_file_id')
-                ->map(function ($group, $knowledgeFileId) use ($knowledgeFiles) {
-                    $knowledgeFile = $knowledgeFiles->get((int) $knowledgeFileId);
-
-                    if (! $knowledgeFile) {
-                        return null;
-                    }
-
-                    $topMatch = $group->sortByDesc('score')->first();
-
-                    return [
-                        'id' => $knowledgeFile->id,
-                        'title' => $knowledgeFile->original_name,
-                        'excerpt' => $this->excerpt((string) ($topMatch['content'] ?? '')),
-                        'updated_at' => $knowledgeFile->ingested_at?->toISOString(),
-                    ];
+                    return str_contains($haystack, mb_strtolower($query));
                 })
-                ->filter()
-                ->values()
-                ->all();
-        } else {
-            $articles = KnowledgeFile::query()
-                ->where('agent_id', $agent->id)
-                ->where('status', 'ready')
-                ->latest('ingested_at')
-                ->limit(8)
-                ->get()
-                ->map(fn (KnowledgeFile $knowledgeFile) => [
-                    'id' => $knowledgeFile->id,
-                    'title' => $knowledgeFile->original_name,
-                    'excerpt' => $this->excerpt($this->readProcessedText($knowledgeFile)),
-                    'updated_at' => $knowledgeFile->ingested_at?->toISOString(),
-                ])
-                ->all();
-        }
+            )
+            ->values()
+            ->map(fn (array $article) => [
+                'id' => $article['id'],
+                'title' => $article['title'],
+                'excerpt' => $this->excerpt($article['content']),
+                'updated_at' => null,
+            ])
+            ->all();
 
         return response()->json([
             'data' => [
@@ -167,42 +135,24 @@ class WidgetController extends Controller
         ]);
     }
 
-    public function helpArticle(string $widgetToken, KnowledgeFile $knowledgeFile): JsonResponse
+    public function helpArticle(string $widgetToken, string $knowledgeFile): JsonResponse
     {
         $agent = $this->agentService->resolveActiveAgentByWidgetToken($widgetToken);
+        $article = collect($this->helpCenterArticles($agent))
+            ->firstWhere('id', $knowledgeFile);
 
-        abort_unless(
-            $knowledgeFile->agent_id === $agent->id && $knowledgeFile->status === 'ready',
-            404
-        );
+        abort_unless($article !== null, 404);
 
         return response()->json([
             'data' => [
                 'article' => [
-                    'id' => $knowledgeFile->id,
-                    'title' => $knowledgeFile->original_name,
-                    'content' => $this->readProcessedText($knowledgeFile),
-                    'updated_at' => $knowledgeFile->ingested_at?->toISOString(),
+                    'id' => $article['id'],
+                    'title' => $article['title'],
+                    'content' => $article['content'],
+                    'updated_at' => null,
                 ],
             ],
         ]);
-    }
-
-    protected function readProcessedText(KnowledgeFile $knowledgeFile): string
-    {
-        $path = $knowledgeFile->meta['processed_text_path'] ?? null;
-
-        if (! $path) {
-            return '';
-        }
-
-        $disk = Storage::disk($knowledgeFile->disk);
-
-        if (! $disk->exists($path)) {
-            return '';
-        }
-
-        return trim((string) $disk->get($path));
     }
 
     protected function excerpt(string $text, int $limit = 160): string
@@ -216,5 +166,24 @@ class WidgetController extends Controller
         return mb_strlen($normalized) > $limit
             ? mb_substr($normalized, 0, $limit - 1).'...'
             : $normalized;
+    }
+
+    /**
+     * @return array<int, array{id: string, title: string, content: string}>
+     */
+    protected function helpCenterArticles($agent): array
+    {
+        return collect($agent->settings['help_center_items'] ?? [])
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->map(function (array $item, int $index): array {
+                return [
+                    'id' => (string) ($index + 1),
+                    'title' => trim((string) ($item['title'] ?? '')),
+                    'content' => trim((string) ($item['description'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $item): bool => $item['title'] !== '' && $item['content'] !== '')
+            ->values()
+            ->all();
     }
 }
