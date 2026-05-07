@@ -334,17 +334,17 @@ a.fi-icon-btn-color-primary:focus * {
 .fi-simple-page .fi-input-wrp input,
 .fi-simple-page .fi-input-wrp textarea,
 .fi-simple-page .fi-input-wrp select {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-    caret-color: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
 }
 
 .fi-simple-page input,
 .fi-simple-page textarea,
 .fi-simple-page select {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-    caret-color: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
 }
 
 .fi-simple-layout .fi-btn[type='submit'] {
