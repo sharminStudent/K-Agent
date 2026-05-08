@@ -34,17 +34,7 @@ class ManageKnowledgeFiles extends ManageRecords
                         ->label('Knowledge File')
                         ->storeFiles(false)
                         ->required()
-                        ->acceptedFileTypes([
-                            'application/pdf',
-                            'text/plain',
-                            'text/csv',
-                            'application/json',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            'application/msword',
-                            'application/octet-stream',
-                            'application/zip',
-                            'application/x-zip-compressed',
-                        ])
+                        ->helperText('Supported file types: PDF, TXT, CSV, JSON, DOC, DOCX.')
                         ->rules([
                             'file',
                             'extensions:pdf,txt,csv,json,doc,docx',
