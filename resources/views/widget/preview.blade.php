@@ -15,9 +15,10 @@
             min-height: 100%;
             font-family: "Segoe UI", sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(211, 3, 61, 0.12), transparent 28%),
-                linear-gradient(180deg, #f6f7fb 0%, #eef1f7 100%);
-            color: #11213d;
+                radial-gradient(circle at top left, rgba(211, 3, 61, 0.22), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.12), transparent 26%),
+                linear-gradient(180deg, #09090f 0%, #0f172a 46%, #111827 100%);
+            color: #f8fafc;
         }
 
         .page {
@@ -35,7 +36,7 @@
             font-weight: 700;
             letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: #8b0f2e;
+            color: #fda4af;
         }
 
         h1 {
@@ -49,7 +50,7 @@
             margin: 18px 0 0;
             font-size: 18px;
             line-height: 1.6;
-            color: #55627d;
+            color: #cbd5e1;
         }
 
         .card {
@@ -59,9 +60,10 @@
             gap: 14px;
             padding: 18px 20px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.86);
-            border: 1px solid rgba(17, 33, 61, 0.08);
-            box-shadow: 0 24px 60px rgba(17, 33, 61, 0.08);
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(248, 250, 252, 0.12);
+            box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
+            backdrop-filter: blur(16px);
         }
 
         .dot {
@@ -74,7 +76,7 @@
 
         .caption {
             font-size: 14px;
-            color: #34425c;
+            color: #e2e8f0;
         }
     </style>
 </head>
