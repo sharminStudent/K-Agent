@@ -56,7 +56,6 @@ class CompanyStats extends StatsOverviewWidget
         $sessionTrend = $this->getTrendData(ChatSession::class, $agentId);
         $leadTrend = $this->getTrendData(Lead::class, $agentId);
         $activeChatTrend = $this->getTrendData(ChatSession::class, $agentId, fn (Builder $query): Builder => $query->where('status', 'active'));
-        $qualifiedLeadTrend = $this->getTrendData(Lead::class, $agentId, fn (Builder $query): Builder => $query->where('status', 'qualified'));
         $knowledgeTrend = $this->getTrendData(KnowledgeFile::class, $agentId);
 
         return [
@@ -80,11 +79,6 @@ class CompanyStats extends StatsOverviewWidget
                 ->icon(Heroicon::OutlinedBolt)
                 ->chart($activeChatTrend)
                 ->color('primary'),
-            Stat::make('Qualified Leads', (string) (clone $leads)->where('status', 'qualified')->count())
-                ->description((clone $leads)->where('status', 'closed')->count().' closed so far')
-                ->icon(Heroicon::OutlinedCheckBadge)
-                ->chart($qualifiedLeadTrend)
-                ->color('success'),
             Stat::make('Knowledge Files', (string) (clone $knowledgeFiles)->count())
                 ->description((clone $knowledgeFiles)->where('status', 'ready')->count().' files processed and ready')
                 ->icon(Heroicon::OutlinedDocumentText)
