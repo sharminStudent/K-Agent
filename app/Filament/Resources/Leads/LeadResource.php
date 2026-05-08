@@ -114,6 +114,7 @@ class LeadResource extends Resource
                     }),
                 TextColumn::make('chatSession.public_id')
                     ->label('Session')
+                    ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -168,7 +169,9 @@ class LeadResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('agent_id', $user->agent_id);
+        return $query
+            ->where('agent_id', $user->agent_id)
+            ->with('chatSession');
     }
 
     public static function getPages(): array
