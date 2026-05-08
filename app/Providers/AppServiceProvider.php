@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
 
         config([
             'livewire.temporary_file_upload.disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 'public'),
+            'livewire.temporary_file_upload.middleware' => [
+                \App\Http\Middleware\LogLivewireTemporaryUpload::class,
+                'throttle:60,1',
+            ],
         ]);
 
         Event::listen(Login::class, function (Login $event): void {
