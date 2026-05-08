@@ -19,7 +19,7 @@ class DeploymentSmokeTest extends TestCase
         ]);
 
         $this->get('/up')->assertOk();
-        $this->get('/')->assertOk();
+        $this->get('/')->assertRedirect('/admin/login');
         $this->get('/admin')->assertRedirect('/admin/login');
         $this->get('/widget/'.$agent->widget_token.'/embed.js')->assertOk();
         $this->get('/widget/'.$agent->widget_token.'/frame')->assertOk();

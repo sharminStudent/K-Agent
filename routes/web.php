@@ -4,9 +4,7 @@ use App\Http\Controllers\Filament\TranscriptDownloadController;
 use App\Http\Controllers\WidgetController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/admin/login');
 
 Route::prefix('widget/{widgetToken}')->group(function (): void {
     Route::get('/embed.js', [WidgetController::class, 'script'])->name('widget.script');
