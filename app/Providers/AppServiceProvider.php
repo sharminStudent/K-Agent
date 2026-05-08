@@ -29,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        config([
+            'livewire.temporary_file_upload.disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 'public'),
+        ]);
+
         Event::listen(Login::class, function (Login $event): void {
             if (! $event->user instanceof User) {
                 return;
