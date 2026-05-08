@@ -114,22 +114,25 @@ class LeadCaptureService
         $chatSession = $chatSession->fresh();
 
         if (filled($chatSession->visitor_email) && filled($chatSession->visitor_name)) {
-            $lead = Lead::query()->firstOrCreate(
-                [
-                    'agent_id' => $agent->id,
-                    'email' => $chatSession->visitor_email,
-                ],
-                [
-                    'chat_session_id' => $chatSession->id,
-                    'name' => $chatSession->visitor_name,
-                    'phone' => $chatSession->visitor_phone,
-                    'status' => 'new',
-                    'notes' => $message,
-                    'meta' => ['source' => 'widget_contact_capture'],
-                ]
-            );
+            $lead = Lead::query()->firstOrNew([
+                'agent_id' => $agent->id,
+                'email' => $chatSession->visitor_email,
+            ]);
 
-            if ($lead->wasRecentlyCreated) {
+            $wasRecentlyCreated = ! $lead->exists;
+
+            $lead->fill([
+                'chat_session_id' => $chatSession->id,
+                'name' => $chatSession->visitor_name,
+                'phone' => $chatSession->visitor_phone,
+                'status' => $lead->status ?: 'new',
+                'notes' => $message,
+                'meta' => array_merge($lead->meta ?? [], ['source' => 'widget_contact_capture']),
+            ]);
+
+            $lead->save();
+
+            if ($wasRecentlyCreated) {
                 $this->usageTrackingService->recordLead($agent);
             }
         }

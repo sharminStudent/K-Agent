@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Validation\Rule;
 
 /**
  * @property-read Schema $form
@@ -88,6 +89,7 @@ class EditCompanyProfile extends Page
                             ->label('Email')
                             ->email()
                             ->required()
+                            ->rule(fn () => Rule::unique('users', 'email')->ignore(Filament::auth()->id()))
                             ->maxLength(255),
                         TextInput::make('admin_phone')
                             ->label('Phone Number')
