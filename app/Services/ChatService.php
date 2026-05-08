@@ -152,6 +152,14 @@ class ChatService
         }
         $this->storeClassificationMeta($chatSession, $intent, $decision['action'], $decision['reason'] ?? null, $decision);
 
+        if ($hadPendingLeadContext
+            && $previousMissingLeadFields !== []
+            && $this->leadCaptureService->missingRequiredFields($agent, $chatSession) === []) {
+            $reply = $this->handleSavedLead($agent, $chatSession, $intent);
+
+            return $this->finalizeReply($chatSession->fresh(), $reply, $intent, $reply['meta']['action'] ?? 'save_lead', $reply['meta']['reason'] ?? $decision['reason'], $decision);
+        }
+
         if ($dangerousZone = $this->guardrailService->detectViolation($agent, $latestUserMessage, $intent)) {
             $chatSession = $this->transitionConversationState($chatSession, self::STATE_RESTRICTED_HANDOFF, [
                 'restricted_attempt_count' => ((int) ($chatSession->meta['restricted_attempt_count'] ?? 0)) + 1,
@@ -179,14 +187,6 @@ class ChatService
             if ($reply = $this->buildFollowUpReply($agent, $chatSession)) {
                 return $this->finalizeReply($chatSession, $reply, $intent, $reply['meta']['action'] ?? 'continue_previous_topic', $reply['meta']['reason'] ?? $intent['reason'], $decision);
             }
-        }
-
-        if ($hadPendingLeadContext
-            && $previousMissingLeadFields !== []
-            && $this->leadCaptureService->missingRequiredFields($agent, $chatSession) === []) {
-            $reply = $this->handleSavedLead($agent, $chatSession, $intent);
-
-            return $this->finalizeReply($chatSession->fresh(), $reply, $intent, $reply['meta']['action'] ?? 'save_lead', $reply['meta']['reason'] ?? $decision['reason'], $decision);
         }
 
         $reply = match ($decision['action']) {

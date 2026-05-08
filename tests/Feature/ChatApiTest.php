@@ -1282,6 +1282,57 @@ class ChatApiTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_it_prioritizes_completed_lead_capture_over_guardrail_fallback_during_identity_follow_up(): void
+    {
+        Http::fake();
+
+        $this->partialMock(\App\Services\GuardrailService::class, function ($mock): void {
+            $mock->shouldReceive('detectViolation')
+                ->times(2)
+                ->andReturnNull();
+        });
+
+        $agent = Agent::query()->create([
+            'name' => 'Support Agent',
+            'company_name' => 'Klabs',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $chatSession = ChatSession::query()->create([
+            'agent_id' => $agent->id,
+        ]);
+
+        $this->postJson('/api/chat/send-message', [
+            'widget_token' => $agent->widget_token,
+            'session_id' => $chatSession->public_id,
+            'message' => 'who are you',
+        ])->assertCreated();
+
+        $this->postJson('/api/chat/send-message', [
+            'widget_token' => $agent->widget_token,
+            'session_id' => $chatSession->public_id,
+            'message' => 'tell me more',
+        ])->assertCreated();
+
+        $response = $this->postJson('/api/chat/send-message', [
+            'widget_token' => $agent->widget_token,
+            'session_id' => $chatSession->public_id,
+            'message' => 'Sharmin Ali, sharminah@gmail.com',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.assistant_message.meta.source', 'lead_capture_follow_up')
+            ->assertJsonPath('data.assistant_message.meta.lead_captured', true)
+            ->assertJsonPath('data.assistant_message.content', 'Thank you, Sharmin Ali. I saved your contact details. You can ask me about Klabs services, pricing, working hours, contact details, or support options.');
+
+        $this->assertDatabaseHas('leads', [
+            'agent_id' => $agent->id,
+            'chat_session_id' => $chatSession->id,
+            'name' => 'Sharmin Ali',
+            'email' => 'sharminah@gmail.com',
+        ]);
+    }
+
     public function test_it_captures_contact_then_answers_the_pending_company_question(): void
     {
         Storage::fake('local');
