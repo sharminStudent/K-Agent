@@ -41,6 +41,13 @@ class ManageKnowledgeFiles extends ManageRecords
                             'application/json',
                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                             'application/msword',
+                            'application/octet-stream',
+                            'application/zip',
+                            'application/x-zip-compressed',
+                        ])
+                        ->rules([
+                            'file',
+                            'extensions:pdf,txt,csv,json,doc,docx',
                         ])
                         ->maxSize(10240),
                     Toggle::make('process_now')
