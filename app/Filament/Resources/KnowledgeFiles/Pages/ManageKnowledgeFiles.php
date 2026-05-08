@@ -13,6 +13,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Icons\Heroicon;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Throwable;
 
 class ManageKnowledgeFiles extends ManageRecords
 {
@@ -61,17 +62,35 @@ class ManageKnowledgeFiles extends ManageRecords
                         ],
                     ], $uploadedFile);
 
+                    $processingError = null;
+
                     if (($data['process_now'] ?? true) === true) {
-                        $knowledgeService->processKnowledgeFile($knowledgeFile, [
-                            'widget_token' => $agent->widget_token,
-                        ]);
+                        try {
+                            $knowledgeService->processKnowledgeFile($knowledgeFile, [
+                                'widget_token' => $agent->widget_token,
+                            ]);
+                        } catch (Throwable $exception) {
+                            report($exception);
+
+                            $processingError = $exception->getMessage();
+                        }
                     }
 
-                    Notification::make()
-                        ->success()
-                        ->title('Knowledge file uploaded')
-                        ->body(($data['process_now'] ?? true) ? 'The file was uploaded and processed.' : 'The file was uploaded successfully.')
-                        ->send();
+                    $notification = Notification::make();
+
+                    if ($processingError !== null) {
+                        $notification
+                            ->warning()
+                            ->title('Knowledge file uploaded, but processing failed')
+                            ->body("The file was saved, but processing failed: {$processingError}");
+                    } else {
+                        $notification
+                            ->success()
+                            ->title('Knowledge file uploaded')
+                            ->body(($data['process_now'] ?? true) ? 'The file was uploaded and processed.' : 'The file was uploaded successfully.');
+                    }
+
+                    $notification->send();
                 }),
             Action::make('additionalInfo')
                 ->label('Additional Info')
