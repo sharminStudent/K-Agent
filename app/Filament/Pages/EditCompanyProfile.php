@@ -40,6 +40,11 @@ class EditCompanyProfile extends Page
      */
     public ?array $data = [];
 
+    protected function mailNotificationsAreConfigured(): bool
+    {
+        return ! in_array(config('mail.default'), ['array', 'log'], true);
+    }
+
     public static function canAccess(): bool
     {
         return Filament::auth()->check() && ! Filament::auth()->user()?->isSuperAdmin();
@@ -126,6 +131,9 @@ class EditCompanyProfile extends Page
                             ->label('Lead Notification Email')
                             ->email()
                             ->maxLength(255)
+                            ->helperText(fn (): ?string => $this->mailNotificationsAreConfigured()
+                                ? null
+                                : 'Email delivery is not configured on the server yet. Leads will still appear in the dashboard until SMTP, Resend, or another mail provider is connected in production.')
                             ->required(fn ($get): bool => (bool) $get('lead_notification_enabled')),
                         Toggle::make('lead_notification_enabled')
                             ->label('Email me when a lead is captured')
@@ -190,6 +198,14 @@ class EditCompanyProfile extends Page
             ->title('Profile saved')
             ->body('Admin profile details have been updated.')
             ->send();
+
+        if (($state['lead_notification_enabled'] ?? false) && ! $this->mailNotificationsAreConfigured()) {
+            Notification::make()
+                ->warning()
+                ->title('Email delivery is not configured')
+                ->body('Lead notifications are still saved in the dashboard, but Railway is currently using the log mailer. Add SMTP or another mail provider to send real emails.')
+                ->send();
+        }
 
         $this->redirect(CompanyProfile::getUrl(), navigate: true);
     }
