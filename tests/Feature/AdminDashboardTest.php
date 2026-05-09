@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\CompanyProfile;
 use App\Models\ActivityLog;
 use App\Models\Agent;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminDashboardTest extends TestCase
@@ -206,5 +209,29 @@ class AdminDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Workspace profile settings were updated.')
             ->assertDontSee('A new lead was captured from the widget.');
+    }
+
+    public function test_company_user_can_change_password_from_profile_page(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $user = User::factory()->create([
+            'agent_id' => $agent->id,
+            'password' => Hash::make('current-password'),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(CompanyProfile::class)
+            ->set('data.current_password', 'current-password')
+            ->set('data.new_password', 'new-password-123')
+            ->set('data.new_password_confirmation', 'new-password-123')
+            ->call('save');
+
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
     }
 }

@@ -128,20 +128,17 @@ class Profile extends Page
                         TextInput::make('current_password')
                             ->label('Current Password')
                             ->password()
-                            ->revealable()
-                            ->dehydrated(false),
+                            ->revealable(),
                         TextInput::make('new_password')
                             ->label('New Password')
                             ->password()
                             ->revealable()
                             ->rule(Password::defaults())
-                            ->dehydrated(false)
                             ->same('new_password_confirmation'),
                         TextInput::make('new_password_confirmation')
                             ->label('Confirm New Password')
                             ->password()
-                            ->revealable()
-                            ->dehydrated(false),
+                            ->revealable(),
                     ])
                     ->columns(2),
             ]);

@@ -19,7 +19,9 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use UnitEnum;
 
 /**
@@ -66,6 +68,9 @@ class CompanyProfile extends Page
             'company_slug' => $agent?->slug,
             'lead_notification_enabled' => (bool) data_get($agent?->settings, 'notifications.lead_capture.enabled', false),
             'lead_notification_email' => data_get($agent?->settings, 'notifications.lead_capture.email') ?? $user?->email,
+            'current_password' => null,
+            'new_password' => null,
+            'new_password_confirmation' => null,
         ]);
     }
 
@@ -142,6 +147,28 @@ class CompanyProfile extends Page
                             ->default(false),
                     ])
                     ->columns(2),
+                Section::make('Security')
+                    ->description('Change the workspace admin password when needed.')
+                    ->schema([
+                        TextInput::make('current_password')
+                            ->label('Current Password')
+                            ->password()
+                            ->revealable()
+                            ->live(),
+                        TextInput::make('new_password')
+                            ->label('New Password')
+                            ->password()
+                            ->revealable()
+                            ->rule(Password::defaults())
+                            ->same('new_password_confirmation')
+                            ->visible(fn ($get): bool => filled($get('current_password'))),
+                        TextInput::make('new_password_confirmation')
+                            ->label('Confirm New Password')
+                            ->password()
+                            ->revealable()
+                            ->visible(fn ($get): bool => filled($get('current_password'))),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -178,6 +205,22 @@ class CompanyProfile extends Page
             'phone' => BahrainPhone::normalizeForStorage($state['admin_phone'] ?? null),
         ]);
 
+        if (filled($state['new_password'] ?? null)) {
+            if (! filled($state['current_password'] ?? null) || ! Hash::check((string) $state['current_password'], (string) $user?->password)) {
+                Notification::make()
+                    ->danger()
+                    ->title('Password not changed')
+                    ->body('The current password is incorrect.')
+                    ->send();
+
+                return;
+            }
+
+            $user?->update([
+                'password' => (string) $state['new_password'],
+            ]);
+        }
+
         $agent = $user?->agent;
 
         $settings = is_array($agent?->settings) ? $agent->settings : [];
@@ -199,14 +242,18 @@ class CompanyProfile extends Page
             user: $user,
             subject: $agent,
             meta: [
-                'summary' => 'Admin profile, company details, or lead notification settings were changed.',
+                'summary' => filled($state['new_password'] ?? null)
+                    ? 'Admin profile, company details, lead notification settings, or password were changed.'
+                    : 'Admin profile, company details, or lead notification settings were changed.',
             ],
         );
 
         Notification::make()
             ->success()
             ->title('Profile saved')
-            ->body('Admin profile details have been updated.')
+            ->body(filled($state['new_password'] ?? null)
+                ? 'Admin profile details and password have been updated.'
+                : 'Admin profile details have been updated.')
             ->send();
 
         if (($state['lead_notification_enabled'] ?? false) && ! $this->mailNotificationsAreConfigured()) {
@@ -216,5 +263,7 @@ class CompanyProfile extends Page
                 ->body('Lead notifications are still saved in the dashboard, but Railway is currently using the log mailer. Add SMTP or another mail provider to send real emails.')
                 ->send();
         }
+
+        $this->mount();
     }
 }
