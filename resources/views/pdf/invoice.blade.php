@@ -96,7 +96,7 @@
             border: 1px solid #d1d5db;
             padding: 14px 16px;
             background: #ffffff;
-            height: 126px;
+            height: 142px;
         }
 
         .meta-table,
@@ -138,38 +138,30 @@
         }
 
         .status {
-            display: inline-block;
-            padding: 3px 8px;
-            border: 1px solid #d1d5db;
-            font-size: 11px;
+            display: inline;
+            padding: 0;
+            border: 0;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: #ffffff;
+            letter-spacing: 0.4px;
+            background: transparent;
             color: #111827;
         }
 
         .status.paid {
-            border-color: #bbf7d0;
-            background: #f0fdf4;
             color: #166534;
         }
 
         .status.pending {
-            border-color: #fde68a;
-            background: #fffbeb;
             color: #92400e;
         }
 
         .status.failed {
-            border-color: #fecaca;
-            background: #fef2f2;
             color: #991b1b;
         }
 
         .status.refunded {
-            border-color: #d1d5db;
-            background: #f9fafb;
             color: #4b5563;
         }
 
