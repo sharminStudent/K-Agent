@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agent;
+use App\Models\PaymentRecord;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,6 +46,7 @@ class SuperAdminPanelTest extends TestCase
             '/super-admin/workspace-users',
             '/super-admin/admins',
             '/super-admin/agent-settings',
+            '/super-admin/notifications',
             '/super-admin/profile',
             '/super-admin/activity-logs',
             '/super-admin/all-chat-sessions',
@@ -233,5 +235,40 @@ class SuperAdminPanelTest extends TestCase
             ->assertOk()
             ->assertSee('platform-openai-key')
             ->assertDontSee('client@agent');
+    }
+
+    public function test_super_admin_notifications_page_shows_overdue_billing_and_tracking_alerts(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+            'payment_status' => Agent::PAYMENT_STATUS_PAST_DUE,
+            'subscription_plan' => 'growth',
+            'api_request_count' => 24,
+            'last_error_at' => now()->subHour(),
+        ]);
+
+        PaymentRecord::query()->create([
+            'agent_id' => $agent->id,
+            'reference' => 'INV-1001',
+            'amount' => 49.95,
+            'currency' => 'BHD',
+            'status' => PaymentRecord::STATUS_PENDING,
+            'due_at' => now()->subDays(3),
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/notifications')
+            ->assertOk()
+            ->assertSee('Billing Alerts')
+            ->assertSee('Account Status')
+            ->assertSee('Runtime Tracking')
+            ->assertSee('Acme Demo payment is overdue')
+            ->assertSee('INV-1001')
+            ->assertSee('Acme Demo account requires billing attention')
+            ->assertSee('Acme Demo has recent runtime errors');
     }
 }
