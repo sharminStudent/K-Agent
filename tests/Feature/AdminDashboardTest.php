@@ -228,10 +228,33 @@ class AdminDashboardTest extends TestCase
 
         Livewire::test(CompanyProfile::class)
             ->set('data.current_password', 'current-password')
+            ->call('verifyCurrentPassword')
             ->set('data.new_password', 'new-password-123')
             ->set('data.new_password_confirmation', 'new-password-123')
             ->call('save');
 
         $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+    }
+
+    public function test_company_user_cannot_unlock_password_change_with_wrong_current_password(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $user = User::factory()->create([
+            'agent_id' => $agent->id,
+            'password' => Hash::make('current-password'),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(CompanyProfile::class)
+            ->set('data.current_password', 'wrong-password')
+            ->call('verifyCurrentPassword')
+            ->assertHasErrors(['data.current_password'])
+            ->assertSet('passwordChangeUnlocked', false);
     }
 }
