@@ -109,14 +109,6 @@ class AgentResource extends Resource
                                 'edit' => 'Client passwords are reset from the dedicated reset action.',
                                 default => 'Passwords are stored securely and cannot be viewed after saving.',
                             }),
-                        TextInput::make('password_status')
-                            ->label('Saved Password')
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->visible(fn (string $operation): bool => in_array($operation, ['view', 'edit'], true))
-                            ->helperText(fn (string $operation): string => $operation === 'edit'
-                                ? 'Client passwords are stored securely and cannot be viewed. Enter a new password above only if you want to reset it.'
-                                : 'Client passwords are stored securely and cannot be viewed after saving.'),
                         Textarea::make('welcome_message')
                             ->rows(3)
                             ->columnSpan(4),
