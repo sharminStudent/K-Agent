@@ -101,11 +101,12 @@ class AgentResource extends Resource
                             ->password()
                             ->revealable()
                             ->required(fn (string $operation): bool => $operation === 'create')
+                            ->visible(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->rule(Password::defaults())
                             ->helperText(fn (string $operation): string => match ($operation) {
                                 'create' => 'Set the initial password for the client login.',
-                                'edit' => 'Leave blank to keep the current password.',
+                                'edit' => 'Client passwords are reset from the dedicated reset action.',
                                 default => 'Passwords are stored securely and cannot be viewed after saving.',
                             }),
                         TextInput::make('password_status')
