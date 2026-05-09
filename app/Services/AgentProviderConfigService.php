@@ -100,7 +100,7 @@ class AgentProviderConfigService
 
         return [
             'api_key' => $hasClientConfig
-                ? ($this->decrypt($provider['api_key'] ?? null) ?: config('services.openai.api_key'))
+                ? ($this->normalizeOpenAiApiKey($this->decrypt($provider['api_key'] ?? null)) ?: config('services.openai.api_key'))
                 : config('services.openai.api_key'),
             'base_url' => $hasClientConfig
                 ? ($provider['base_url'] ?? config('services.openai.base_url'))
@@ -250,5 +250,21 @@ class AgentProviderConfigService
         } catch (DecryptException) {
             return null;
         }
+    }
+
+    protected function normalizeOpenAiApiKey(?string $value): ?string
+    {
+        if (! filled($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        // Reject obvious placeholder values accidentally copied from seeded logins/passwords.
+        if (filter_var($trimmed, FILTER_VALIDATE_EMAIL) !== false || str_contains($trimmed, '@agent')) {
+            return null;
+        }
+
+        return $trimmed;
     }
 }

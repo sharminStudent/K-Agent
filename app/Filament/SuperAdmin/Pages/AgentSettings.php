@@ -193,7 +193,8 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.openai.api_key')
                             ->label('OpenAI API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->placeholder('Not configured'),
+                            ->placeholder('Not configured')
+                            ->helperText('Uses the saved client key if present, otherwise falls back to the platform OpenAI key.'),
                         TextInput::make('provider_settings.openai.base_url')
                             ->label('OpenAI Base URL')
                             ->url()
@@ -210,7 +211,8 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.qdrant.api_key')
                             ->label('Qdrant API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->placeholder('Not configured'),
+                            ->placeholder('Not configured')
+                            ->helperText('Optional. Internal Railway Qdrant can run without an API key.'),
                         TextInput::make('provider_settings.qdrant.base_url')
                             ->label('Qdrant URL')
                             ->url()
@@ -227,7 +229,8 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.railway.api_key')
                             ->label('Railway API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->placeholder('Not configured'),
+                            ->placeholder('Not configured')
+                            ->helperText('Optional. Only needed if this app must call Railway API directly.'),
                         TextInput::make('provider_settings.railway.project_id')
                             ->label('Project ID')
                             ->maxLength(255),

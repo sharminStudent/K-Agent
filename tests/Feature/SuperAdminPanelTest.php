@@ -188,4 +188,32 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('platform-qdrant-key')
             ->assertSee('platform-railway-key');
     }
+
+    public function test_invalid_client_openai_placeholder_falls_back_to_platform_key(): void
+    {
+        config()->set('services.openai.api_key', 'platform-openai-key');
+
+        Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+            'settings' => [
+                'provider_credentials' => [
+                    'openai' => [
+                        'api_key' => Crypt::encryptString('client@agent'),
+                        'chat_model' => 'gpt-5.3-chat-latest',
+                        'embedding_model' => 'text-embedding-3-large',
+                    ],
+                ],
+            ],
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/agent-settings')
+            ->assertOk()
+            ->assertSee('platform-openai-key')
+            ->assertDontSee('client@agent');
+    }
 }
