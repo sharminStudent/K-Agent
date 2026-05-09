@@ -190,6 +190,9 @@ class AgentSettings extends Page
                 Section::make('Provider Connections')
                     ->description('Review and override the connection settings used by this client workspace.')
                     ->schema([
+                        Placeholder::make('provider_settings.openai.resolved_api_key')
+                            ->label('Resolved OpenAI API Key')
+                            ->content(fn (): string => app(AgentProviderConfigService::class)->openAiConfig($this->agentRecord)['api_key'] ?? 'Not configured'),
                         TextInput::make('provider_settings.openai.api_key')
                             ->label('OpenAI API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
@@ -207,6 +210,9 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.openai.timeout')
                             ->numeric()
                             ->minValue(1),
+                        Placeholder::make('provider_settings.qdrant.resolved_api_key')
+                            ->label('Resolved Qdrant API Key')
+                            ->content(fn (): string => app(AgentProviderConfigService::class)->qdrantConfig($this->agentRecord)['api_key'] ?? 'Not configured'),
                         TextInput::make('provider_settings.qdrant.api_key')
                             ->label('Qdrant API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
@@ -224,6 +230,9 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.qdrant.timeout')
                             ->numeric()
                             ->minValue(1),
+                        Placeholder::make('provider_settings.railway.resolved_api_key')
+                            ->label('Resolved Railway API Key')
+                            ->content(fn (): string => app(AgentProviderConfigService::class)->railwayConfig($this->agentRecord)['api_key'] ?? 'Not configured'),
                         TextInput::make('provider_settings.railway.api_key')
                             ->label('Railway API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
