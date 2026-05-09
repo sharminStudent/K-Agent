@@ -112,15 +112,9 @@ class CompanyNotifications extends Page implements HasTable
                     ->label('This Week')
                     ->query(fn (Builder $query): Builder => $query->where('created_at', '>=', Carbon::now()->startOfWeek())),
             ])
+            ->selectable()
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50])
-            ->recordActions([
-                Action::make('open')
-                    ->label('Open')
-                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
-                    ->url(fn (DatabaseNotification $record): ?string => data_get($record->data, 'url'))
-                    ->visible(fn (DatabaseNotification $record): bool => filled(data_get($record->data, 'url'))),
-            ])
             ->toolbarActions([
                 BulkAction::make('markSelectedRead')
                     ->label('Mark Selected Read')
