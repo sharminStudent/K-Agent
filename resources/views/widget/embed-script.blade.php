@@ -66,24 +66,37 @@
     var isOpen = false;
 
     function applyLayout() {
-        var isSmallScreen = window.matchMedia('(max-width: 640px)').matches;
+        var isPhoneScreen = window.matchMedia('(max-width: 640px)').matches;
+        var isVeryNarrowScreen = window.matchMedia('(max-width: 420px)').matches;
         var isShortScreen = window.matchMedia('(max-height: 720px)').matches;
-        var compactScreen = isSmallScreen;
 
-        frame.style.top = compactScreen ? 'max(8px, env(safe-area-inset-top))' : 'auto';
-        frame.style.right = compactScreen ? 'max(8px, env(safe-area-inset-right))' : '24px';
-        frame.style.left = compactScreen ? 'max(8px, env(safe-area-inset-left))' : 'auto';
-        frame.style.bottom = compactScreen ? 'max(76px, calc(env(safe-area-inset-bottom) + 68px))' : (isShortScreen ? '24px' : '88px');
-        frame.style.width = compactScreen ? 'calc(100vw - 16px)' : '360px';
-        frame.style.maxWidth = compactScreen ? 'calc(100vw - 16px)' : 'calc(100vw - 16px)';
-        frame.style.height = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : '500px';
-        frame.style.maxHeight = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : 'calc(100vh - 48px)';
-        frame.style.borderRadius = compactScreen ? '14px' : '16px';
+        frame.style.top = 'auto';
+        frame.style.left = 'auto';
 
-        launcher.style.right = compactScreen ? 'max(12px, env(safe-area-inset-right))' : '24px';
-        launcher.style.bottom = compactScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';
-        launcher.style.width = compactScreen ? '56px' : '60px';
-        launcher.style.height = compactScreen ? '56px' : '60px';
+        if (isPhoneScreen) {
+            frame.style.right = 'max(12px, env(safe-area-inset-right))';
+            frame.style.bottom = 'max(74px, calc(env(safe-area-inset-bottom) + 62px))';
+            frame.style.width = isVeryNarrowScreen ? 'calc(100vw - 24px)' : 'min(340px, calc(100vw - 24px))';
+            frame.style.maxWidth = 'calc(100vw - 24px)';
+            frame.style.height = isVeryNarrowScreen
+                ? 'min(420px, calc(100dvh - 98px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))'
+                : 'min(460px, calc(100dvh - 98px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))';
+            frame.style.maxHeight = 'calc(100dvh - 98px - env(safe-area-inset-top) - env(safe-area-inset-bottom))';
+            frame.style.borderRadius = '14px';
+        } else {
+            frame.style.right = '24px';
+            frame.style.bottom = isShortScreen ? '24px' : '88px';
+            frame.style.width = '360px';
+            frame.style.maxWidth = 'calc(100vw - 16px)';
+            frame.style.height = '500px';
+            frame.style.maxHeight = 'calc(100vh - 48px)';
+            frame.style.borderRadius = '16px';
+        }
+
+        launcher.style.right = isPhoneScreen ? 'max(12px, env(safe-area-inset-right))' : '24px';
+        launcher.style.bottom = isPhoneScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';
+        launcher.style.width = isPhoneScreen ? '54px' : '60px';
+        launcher.style.height = isPhoneScreen ? '54px' : '60px';
     }
 
     function syncState() {
