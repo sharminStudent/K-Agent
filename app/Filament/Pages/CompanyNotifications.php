@@ -9,7 +9,6 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasMaxWidth;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Notifications\DatabaseNotification;
@@ -235,12 +234,12 @@ class CompanyNotifications extends Page
             ->send();
     }
 
-    protected function applyFilters(Builder $query): Builder
+    protected function applyFilters($query)
     {
         return $query
-            ->when($this->readFilter === 'read', fn (Builder $builder) => $builder->whereNotNull('read_at'))
-            ->when($this->readFilter === 'unread', fn (Builder $builder) => $builder->whereNull('read_at'))
-            ->when($this->dateFilter === 'week', fn (Builder $builder) => $builder->where('created_at', '>=', Carbon::now()->startOfWeek()));
+            ->when($this->readFilter === 'read', fn ($builder) => $builder->whereNotNull('read_at'))
+            ->when($this->readFilter === 'unread', fn ($builder) => $builder->whereNull('read_at'))
+            ->when($this->dateFilter === 'week', fn ($builder) => $builder->where('created_at', '>=', Carbon::now()->startOfWeek()));
     }
 
     /**
