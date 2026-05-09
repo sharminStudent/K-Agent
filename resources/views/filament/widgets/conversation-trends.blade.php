@@ -17,7 +17,7 @@
         class="ka-analytics-section"
     >
         <div class="ka-analytics-kicker-row">
-            <span class="ka-analytics-kicker">Workspace Analytics</span>
+            <span class="ka-analytics-kicker">Agent Performance</span>
             <span class="ka-analytics-range">{{ $periodLabel }}</span>
         </div>
 

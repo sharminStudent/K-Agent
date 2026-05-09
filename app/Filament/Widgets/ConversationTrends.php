@@ -12,16 +12,13 @@ class ConversationTrends extends ChartWidget
 {
     protected string $view = 'filament.widgets.conversation-trends';
 
-    protected ?string $heading = 'Conversation Trends';
+    protected ?string $heading = 'Agent Health & Performance';
 
-    protected ?string $description = 'Last 7 days of sessions and leads for this company.';
+    protected ?string $description = 'A 7-day view of chat volume, lead capture, and overall workspace momentum.';
 
     protected string $color = 'primary';
 
-    protected int|string|array $columnSpan = [
-        'md' => 8,
-        'xl' => 8,
-    ];
+    protected int|string|array $columnSpan = 'full';
 
     protected ?string $maxHeight = '320px';
 
@@ -66,7 +63,7 @@ class ConversationTrends extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Chat Sessions',
+                'label' => 'Conversation Volume',
                     'data' => $sessionData,
                     'borderColor' => '#d3033d',
                     'backgroundColor' => 'rgba(211, 3, 61, 0.24)',
@@ -77,7 +74,7 @@ class ConversationTrends extends ChartWidget
                     'fill' => true,
                 ],
                 [
-                    'label' => 'Leads',
+                'label' => 'Lead Capture',
                     'data' => $leadData,
                     'borderColor' => '#f59e0b',
                     'backgroundColor' => 'rgba(245, 158, 11, 0.24)',
