@@ -116,22 +116,8 @@ class CompanyNotifications extends Page implements HasTable
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50])
             ->toolbarActions([
-                BulkAction::make('markSelectedRead')
-                    ->label('Mark Selected Read')
-                    ->icon(Heroicon::OutlinedEnvelopeOpen)
-                    ->color('gray')
-                    ->visible(fn (self $livewire): bool => count($livewire->selectedTableRecords) === 1)
-                    ->action(fn (Collection $records) => $this->markRecordsAsRead($records))
-                    ->deselectRecordsAfterCompletion(),
-                BulkAction::make('markSelectedUnread')
-                    ->label('Mark Selected Unread')
-                    ->icon(Heroicon::OutlinedEnvelope)
-                    ->color('gray')
-                    ->visible(fn (self $livewire): bool => count($livewire->selectedTableRecords) === 1)
-                    ->action(fn (Collection $records) => $this->markRecordsAsUnread($records))
-                    ->deselectRecordsAfterCompletion(),
                 BulkAction::make('deleteSelected')
-                    ->label('Delete Selected')
+                    ->label('Delete')
                     ->icon(Heroicon::OutlinedTrash)
                     ->color('danger')
                     ->requiresConfirmation()
@@ -140,17 +126,17 @@ class CompanyNotifications extends Page implements HasTable
                     ->deselectRecordsAfterCompletion(),
                 BulkActionGroup::make([
                     BulkAction::make('bulkRead')
-                        ->label('Mark Selected Read')
+                        ->label('Mark All Read')
                         ->icon(Heroicon::OutlinedEnvelopeOpen)
                         ->action(fn (Collection $records) => $this->markRecordsAsRead($records))
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('bulkUnread')
-                        ->label('Mark Selected Unread')
+                        ->label('Mark All Unread')
                         ->icon(Heroicon::OutlinedEnvelope)
                         ->action(fn (Collection $records) => $this->markRecordsAsUnread($records))
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('bulkDelete')
-                        ->label('Delete Selected')
+                        ->label('Delete All')
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
