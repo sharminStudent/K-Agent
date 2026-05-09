@@ -133,6 +133,10 @@ class Profile extends Page
                             ->label('Current Password')
                             ->password()
                             ->revealable()
+                            ->extraInputAttributes([
+                                'autocomplete' => 'new-password',
+                                'data-lpignore' => 'true',
+                            ])
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (): void {
                                 $this->passwordChangeUnlocked = false;
@@ -150,6 +154,10 @@ class Profile extends Page
                             ->label('New Password')
                             ->password()
                             ->revealable()
+                            ->extraInputAttributes([
+                                'autocomplete' => 'new-password',
+                                'data-lpignore' => 'true',
+                            ])
                             ->rule(Password::defaults())
                             ->same('new_password_confirmation')
                             ->visible(fn (): bool => $this->passwordChangeUnlocked),
@@ -157,6 +165,10 @@ class Profile extends Page
                             ->label('Confirm New Password')
                             ->password()
                             ->revealable()
+                            ->extraInputAttributes([
+                                'autocomplete' => 'new-password',
+                                'data-lpignore' => 'true',
+                            ])
                             ->visible(fn (): bool => $this->passwordChangeUnlocked),
                     ])
                     ->columns(2),

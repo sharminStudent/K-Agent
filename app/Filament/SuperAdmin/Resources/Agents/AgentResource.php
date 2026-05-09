@@ -114,8 +114,8 @@ class AgentResource extends Resource
                             ->dehydrated(false)
                             ->visible(fn (string $operation): bool => in_array($operation, ['view', 'edit'], true))
                             ->helperText(fn (string $operation): string => $operation === 'edit'
-                                ? 'The actual password cannot be viewed. Enter a new password above only if you want to reset it.'
-                                : 'The actual password cannot be viewed after saving.'),
+                                ? 'Client passwords are stored securely and cannot be viewed. Enter a new password above only if you want to reset it.'
+                                : 'Client passwords are stored securely and cannot be viewed after saving.'),
                         Textarea::make('welcome_message')
                             ->rows(3)
                             ->columnSpan(4),
@@ -206,18 +206,6 @@ class AgentResource extends Resource
                 TextColumn::make('company_name')
                     ->searchable()
                     ->description(fn (Agent $record): string => $record->name),
-                TextColumn::make('payment_status')
-                    ->label('Payment')
-                    ->placeholder('Unassigned')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Unassigned')
-                    ->color(fn (?string $state): string => match ($state) {
-                        'trial' => 'warning',
-                        'active' => 'success',
-                        'past_due' => 'danger',
-                        'canceled' => 'gray',
-                        default => filled($state) ? 'info' : 'gray',
-                    }),
                 TextColumn::make('chat_sessions_count')
                     ->counts('chatSessions')
                     ->label('Chats'),
