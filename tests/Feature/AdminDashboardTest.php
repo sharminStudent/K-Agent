@@ -36,7 +36,8 @@ class AdminDashboardTest extends TestCase
 
         $this->actingAs($user)
             ->get('/admin')
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('/admin/company-notifications');
     }
 
     public function test_authenticated_user_can_view_the_main_filament_pages(): void
