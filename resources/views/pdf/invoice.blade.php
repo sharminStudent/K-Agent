@@ -22,11 +22,12 @@
             border-bottom: 1px solid #d1d5db;
             padding-bottom: 18px;
             margin-bottom: 26px;
+            border-collapse: collapse;
         }
 
         .logo {
-            max-width: 155px;
-            max-height: 54px;
+            width: 150px;
+            max-height: 52px;
         }
 
         .logo-fallback {
@@ -79,6 +80,10 @@
             vertical-align: top;
         }
 
+        .box-cell {
+            width: 50%;
+        }
+
         .section-title {
             margin: 0 0 10px;
             font-size: 11px;
@@ -91,6 +96,7 @@
             border: 1px solid #d1d5db;
             padding: 14px 16px;
             background: #ffffff;
+            height: 126px;
         }
 
         .meta-table,
@@ -114,6 +120,7 @@
             border: 1px solid #d1d5db;
             padding: 10px 12px;
             text-align: left;
+            vertical-align: top;
         }
 
         .amount-table th {
@@ -177,6 +184,10 @@
         .text-muted {
             color: #6b7280;
         }
+
+        .amount-col {
+            width: 140px;
+        }
     </style>
 </head>
 <body>
@@ -213,7 +224,7 @@
     <div class="block">
         <table class="two-col">
             <tr>
-                <td width="50%" style="padding-right: 10px;">
+                <td class="box-cell" style="padding-right: 10px;">
                     <p class="section-title">Billed To</p>
                     <div class="card">
                         <strong>{{ $agent?->company_name ?? 'Client' }}</strong><br>
@@ -222,7 +233,7 @@
                         {{ $agent?->website_url ?: '-' }}
                     </div>
                 </td>
-                <td width="50%" style="padding-left: 10px;">
+                <td class="box-cell" style="padding-left: 10px;">
                     <p class="section-title">Invoice Summary</p>
                     <div class="card">
                         <table class="meta-table">
@@ -255,7 +266,7 @@
             <thead>
             <tr>
                 <th>Description</th>
-                <th width="120">Amount</th>
+                <th class="amount-col">Amount</th>
             </tr>
             </thead>
             <tbody>
