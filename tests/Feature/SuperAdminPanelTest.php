@@ -148,7 +148,10 @@ class SuperAdminPanelTest extends TestCase
             ->assertOk()
             ->assertSee('openai-secret-key')
             ->assertSee('qdrant-secret-key')
-            ->assertSee('railway-secret-key');
+            ->assertSee('railway-secret-key')
+            ->assertDontSee('Use Client OpenAI Override')
+            ->assertDontSee('Use Client Qdrant Override')
+            ->assertDontSee('Use Client Railway Override');
     }
 
     public function test_super_admin_can_view_resolved_platform_provider_api_keys_in_agent_settings(): void

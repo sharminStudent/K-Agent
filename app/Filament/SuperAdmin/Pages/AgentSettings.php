@@ -190,8 +190,6 @@ class AgentSettings extends Page
                 Section::make('Provider Connections')
                     ->description('Review and override the connection settings used by this client workspace.')
                     ->schema([
-                        Toggle::make('provider_settings.openai.enabled')
-                            ->label('Use Client OpenAI Override'),
                         TextInput::make('provider_settings.openai.api_key')
                             ->label('OpenAI API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
@@ -209,8 +207,6 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.openai.timeout')
                             ->numeric()
                             ->minValue(1),
-                        Toggle::make('provider_settings.qdrant.enabled')
-                            ->label('Use Client Qdrant Override'),
                         TextInput::make('provider_settings.qdrant.api_key')
                             ->label('Qdrant API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
@@ -228,8 +224,6 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.qdrant.timeout')
                             ->numeric()
                             ->minValue(1),
-                        Toggle::make('provider_settings.railway.enabled')
-                            ->label('Use Client Railway Override'),
                         TextInput::make('provider_settings.railway.api_key')
                             ->label('Railway API Key')
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
@@ -293,7 +287,7 @@ class AgentSettings extends Page
                     ->schema([
                         Placeholder::make('diag_openai_source')
                             ->label('OpenAI Source')
-                            ->content(fn (): string => $this->providerEnabled('openai') ? 'Client override + platform fallback' : 'Platform default'),
+                            ->content(fn (): string => $this->providerConfigured('openai') ? 'Client settings + platform fallback' : 'Platform default'),
                         Placeholder::make('diag_openai_base_url')
                             ->label('Resolved OpenAI Base URL')
                             ->content(fn (): string => app(AgentProviderConfigService::class)->openAiConfig($this->agentRecord)['base_url'] ?? '-'),
@@ -308,7 +302,7 @@ class AgentSettings extends Page
                             ->content(fn (): string => filled(app(AgentProviderConfigService::class)->openAiConfig($this->agentRecord)['api_key'] ?? null) ? 'Yes' : 'No'),
                         Placeholder::make('diag_qdrant_source')
                             ->label('Vector Store Source')
-                            ->content(fn (): string => $this->providerEnabled('qdrant') ? 'Client override + platform fallback' : 'Platform default'),
+                            ->content(fn (): string => $this->providerConfigured('qdrant') ? 'Client settings + platform fallback' : 'Platform default'),
                         Placeholder::make('diag_qdrant_url')
                             ->label('Resolved Qdrant URL')
                             ->content(fn (): string => app(AgentProviderConfigService::class)->qdrantConfig($this->agentRecord)['url'] ?? 'Not configured'),
@@ -334,8 +328,8 @@ class AgentSettings extends Page
                             ->label('Realtime Scheme')
                             ->content(fn (): string => (string) (config('broadcasting.connections.reverb.options.scheme') ?: 'http')),
                         Placeholder::make('diag_railway_enabled')
-                            ->label('Railway Override')
-                            ->content(fn (): string => $this->providerEnabled('railway') ? 'Enabled' : 'Disabled'),
+                            ->label('Railway Client Settings')
+                            ->content(fn (): string => $this->providerConfigured('railway') ? 'Configured' : 'Platform default'),
                         Placeholder::make('diag_railway_project')
                             ->label('Railway Project ID')
                             ->content(fn (): string => (string) data_get($this->data, 'provider_settings.railway.project_id', '-')),
@@ -441,7 +435,6 @@ class AgentSettings extends Page
         }
 
         $providerConfigService = app(AgentProviderConfigService::class);
-        $providerSettings = $providerConfigService->sanitizedProviderSettings($this->agentRecord);
         $resolvedOpenAi = $providerConfigService->openAiConfig($this->agentRecord);
         $resolvedQdrant = $providerConfigService->qdrantConfig($this->agentRecord);
         $resolvedRailway = $providerConfigService->railwayConfig($this->agentRecord);
@@ -468,7 +461,6 @@ class AgentSettings extends Page
             'is_active' => $this->agentRecord->is_active,
             'provider_settings' => [
                 'openai' => [
-                    'enabled' => $providerSettings['openai']['enabled'] ?? false,
                     'api_key' => $resolvedOpenAi['api_key'] ?? null,
                     'base_url' => $resolvedOpenAi['base_url'] ?? null,
                     'chat_model' => $resolvedOpenAi['chat_model'] ?? null,
@@ -476,7 +468,6 @@ class AgentSettings extends Page
                     'timeout' => $resolvedOpenAi['timeout'] ?? null,
                 ],
                 'qdrant' => [
-                    'enabled' => $providerSettings['qdrant']['enabled'] ?? false,
                     'api_key' => $resolvedQdrant['api_key'] ?? null,
                     'base_url' => $resolvedQdrant['url'] ?? null,
                     'collection' => $resolvedQdrant['collection'] ?? null,
@@ -484,7 +475,6 @@ class AgentSettings extends Page
                     'timeout' => $resolvedQdrant['timeout'] ?? null,
                 ],
                 'railway' => [
-                    'enabled' => $providerSettings['railway']['enabled'] ?? false,
                     'api_key' => $resolvedRailway['api_key'] ?? null,
                     'project_id' => $resolvedRailway['project_id'] ?? null,
                     'environment_id' => $resolvedRailway['environment_id'] ?? null,
@@ -494,9 +484,11 @@ class AgentSettings extends Page
         ]);
     }
 
-    protected function providerEnabled(string $provider): bool
+    protected function providerConfigured(string $provider): bool
     {
-        return (bool) data_get($this->data, 'provider_settings.'.$provider.'.enabled', false);
+        return app(AgentProviderConfigService::class)->hasClientProviderConfig(
+            $this->agentRecord?->settings['provider_credentials'][$provider] ?? [],
+        );
     }
 
     protected function leadConversionRate(): string

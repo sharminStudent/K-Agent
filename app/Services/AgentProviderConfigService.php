@@ -96,22 +96,22 @@ class AgentProviderConfigService
     public function openAiConfig(?Agent $agent = null): array
     {
         $provider = $agent?->settings['provider_credentials']['openai'] ?? [];
-        $enabled = (bool) ($provider['enabled'] ?? false);
+        $hasClientConfig = $this->hasClientProviderConfig($provider, ['base_url', 'chat_model', 'embedding_model']);
 
         return [
-            'api_key' => $enabled
+            'api_key' => $hasClientConfig
                 ? ($this->decrypt($provider['api_key'] ?? null) ?: config('services.openai.api_key'))
                 : config('services.openai.api_key'),
-            'base_url' => $enabled
+            'base_url' => $hasClientConfig
                 ? ($provider['base_url'] ?? config('services.openai.base_url'))
                 : (string) config('services.openai.base_url'),
-            'chat_model' => $enabled
+            'chat_model' => $hasClientConfig
                 ? ($provider['chat_model'] ?? config('services.openai.chat_model'))
                 : config('services.openai.chat_model'),
-            'embedding_model' => $enabled
+            'embedding_model' => $hasClientConfig
                 ? ($provider['embedding_model'] ?? config('services.openai.embedding_model'))
                 : config('services.openai.embedding_model'),
-            'timeout' => (int) ($enabled
+            'timeout' => (int) ($hasClientConfig
                 ? ($provider['timeout'] ?? config('services.openai.timeout', 30))
                 : config('services.openai.timeout', 30)),
         ];
@@ -123,22 +123,22 @@ class AgentProviderConfigService
     public function qdrantConfig(?Agent $agent = null): array
     {
         $provider = $agent?->settings['provider_credentials']['qdrant'] ?? [];
-        $enabled = (bool) ($provider['enabled'] ?? false);
+        $hasClientConfig = $this->hasClientProviderConfig($provider, ['base_url', 'collection', 'distance']);
 
         return [
-            'url' => $enabled
+            'url' => $hasClientConfig
                 ? ($provider['base_url'] ?? config('services.qdrant.url'))
                 : config('services.qdrant.url'),
-            'api_key' => $enabled
+            'api_key' => $hasClientConfig
                 ? ($this->decrypt($provider['api_key'] ?? null) ?: config('services.qdrant.api_key'))
                 : config('services.qdrant.api_key'),
-            'collection' => $enabled
+            'collection' => $hasClientConfig
                 ? ($provider['collection'] ?? config('services.qdrant.collection'))
                 : config('services.qdrant.collection'),
-            'timeout' => (int) ($enabled
+            'timeout' => (int) ($hasClientConfig
                 ? ($provider['timeout'] ?? config('services.qdrant.timeout', 15))
                 : config('services.qdrant.timeout', 15)),
-            'distance' => (string) ($enabled
+            'distance' => (string) ($hasClientConfig
                 ? ($provider['distance'] ?? config('services.qdrant.distance', 'Cosine'))
                 : config('services.qdrant.distance', 'Cosine')),
         ];
@@ -150,22 +150,41 @@ class AgentProviderConfigService
     public function railwayConfig(?Agent $agent = null): array
     {
         $provider = $agent?->settings['provider_credentials']['railway'] ?? [];
-        $enabled = (bool) ($provider['enabled'] ?? false);
+        $hasClientConfig = $this->hasClientProviderConfig($provider, ['project_id', 'environment_id', 'service_id']);
 
         return [
-            'api_key' => $enabled
+            'api_key' => $hasClientConfig
                 ? ($this->decrypt($provider['api_key'] ?? null) ?: config('services.railway.api_key'))
                 : config('services.railway.api_key'),
-            'project_id' => $enabled
+            'project_id' => $hasClientConfig
                 ? ($provider['project_id'] ?? config('services.railway.project_id'))
                 : config('services.railway.project_id'),
-            'environment_id' => $enabled
+            'environment_id' => $hasClientConfig
                 ? ($provider['environment_id'] ?? config('services.railway.environment_id'))
                 : config('services.railway.environment_id'),
-            'service_id' => $enabled
+            'service_id' => $hasClientConfig
                 ? ($provider['service_id'] ?? config('services.railway.service_id'))
                 : config('services.railway.service_id'),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $provider
+     * @param  array<int, string>  $fields
+     */
+    public function hasClientProviderConfig(array $provider, array $fields = []): bool
+    {
+        if (filled($provider['api_key'] ?? null)) {
+            return true;
+        }
+
+        foreach (['timeout', ...$fields] as $field) {
+            if (filled($provider[$field] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function resolveSecretValue(mixed $value, ?string $existing): ?string
