@@ -62,6 +62,8 @@ class ActivityLogs extends Page implements HasTable
                         fputcsv($handle, [
                             'Time',
                             'Client',
+                            'Severity',
+                            'Status',
                             'Description',
                             'Event',
                             'Actor',
@@ -73,6 +75,8 @@ class ActivityLogs extends Page implements HasTable
                             fputcsv($handle, [
                                 $log->created_at?->format('m/d/Y h:i:s A'),
                                 $log->agent?->company_name,
+                                str($log->severity)->headline()->toString(),
+                                str($log->status)->headline()->toString(),
                                 $log->description,
                                 $log->event,
                                 $log->user?->name ?? 'System',
@@ -103,6 +107,21 @@ class ActivityLogs extends Page implements HasTable
                     ->label('Client')
                     ->placeholder('Platform')
                     ->searchable(),
+                TextColumn::make('severity')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Normal')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'critical' => 'danger',
+                        'high' => 'warning',
+                        default => 'gray',
+                    }),
+                TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Success')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'failed' => 'danger',
+                        default => 'success',
+                    }),
                 TextColumn::make('description')
                     ->wrap()
                     ->searchable(),
@@ -135,6 +154,17 @@ class ActivityLogs extends Page implements HasTable
                         'security' => 'Security',
                         'system' => 'System',
                         'notification' => 'Notification',
+                    ]),
+                SelectFilter::make('severity')
+                    ->options([
+                        'normal' => 'Normal',
+                        'high' => 'High',
+                        'critical' => 'Critical',
+                    ]),
+                SelectFilter::make('status')
+                    ->options([
+                        'success' => 'Success',
+                        'failed' => 'Failed',
                     ]),
                 SelectFilter::make('recent_range')
                     ->label('Recent')

@@ -12,6 +12,8 @@ class ActivityLog extends Model
         'agent_id',
         'user_id',
         'category',
+        'severity',
+        'status',
         'event',
         'description',
         'subject_type',

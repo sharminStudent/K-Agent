@@ -44,6 +44,8 @@ class LeadService
                 event: 'lead.captured',
                 description: 'A new lead was captured from the widget.',
                 category: 'system',
+                severity: 'normal',
+                status: 'success',
                 agent: $agent,
                 subject: $lead,
                 meta: [

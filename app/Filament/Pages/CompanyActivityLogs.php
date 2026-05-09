@@ -12,6 +12,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,6 +65,8 @@ class CompanyActivityLogs extends Page implements HasTable
 
                         fputcsv($handle, [
                             'Time',
+                            'Severity',
+                            'Status',
                             'Description',
                             'Event',
                             'Actor',
@@ -74,6 +77,8 @@ class CompanyActivityLogs extends Page implements HasTable
                         foreach ($logs as $log) {
                             fputcsv($handle, [
                                 $log->created_at?->format('m/d/Y h:i:s A'),
+                                str($log->severity)->headline()->toString(),
+                                str($log->status)->headline()->toString(),
                                 $log->description,
                                 $log->event,
                                 $log->user?->name ?? 'System',
@@ -110,6 +115,21 @@ class CompanyActivityLogs extends Page implements HasTable
                     ->label('Time')
                     ->dateTime('M j, Y g:i A')
                     ->sortable(),
+                TextColumn::make('severity')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Normal')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'critical' => 'danger',
+                        'high' => 'warning',
+                        default => 'gray',
+                    }),
+                TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? str($state)->headline()->toString() : 'Success')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'failed' => 'danger',
+                        default => 'success',
+                    }),
                 TextColumn::make('description')
                     ->wrap()
                     ->searchable(),
@@ -130,6 +150,19 @@ class CompanyActivityLogs extends Page implements HasTable
                     ->wrap()
                     ->placeholder('-')
                     ->toggleable(),
+            ])
+            ->filters([
+                SelectFilter::make('severity')
+                    ->options([
+                        'normal' => 'Normal',
+                        'high' => 'High',
+                        'critical' => 'Critical',
+                    ]),
+                SelectFilter::make('status')
+                    ->options([
+                        'success' => 'Success',
+                        'failed' => 'Failed',
+                    ]),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50])

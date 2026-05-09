@@ -185,6 +185,8 @@ class LeadApiTest extends TestCase
         $this->assertDatabaseHas('activity_logs', [
             'agent_id' => $agent->id,
             'category' => 'system',
+            'severity' => 'normal',
+            'status' => 'success',
             'event' => 'lead.captured',
         ]);
 

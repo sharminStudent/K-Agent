@@ -193,6 +193,8 @@ class AdminDashboardTest extends TestCase
             'agent_id' => $agent->id,
             'user_id' => $user->id,
             'category' => 'admin',
+            'severity' => 'high',
+            'status' => 'success',
             'event' => 'admin.profile.updated',
             'description' => 'Workspace profile settings were updated.',
         ]);
@@ -200,6 +202,8 @@ class AdminDashboardTest extends TestCase
         ActivityLog::query()->create([
             'agent_id' => $otherAgent->id,
             'category' => 'system',
+            'severity' => 'critical',
+            'status' => 'failed',
             'event' => 'lead.captured',
             'description' => 'A new lead was captured from the widget.',
         ]);

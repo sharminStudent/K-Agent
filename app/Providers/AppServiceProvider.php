@@ -46,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
                 event: 'auth.login',
                 description: 'User signed in to the workspace.',
                 category: 'security',
+                severity: 'normal',
+                status: 'success',
                 user: $event->user,
                 meta: [
                     'remember' => $event->remember,
@@ -62,6 +64,8 @@ class AppServiceProvider extends ServiceProvider
                 event: 'auth.logout',
                 description: 'User signed out of the workspace.',
                 category: 'security',
+                severity: 'normal',
+                status: 'success',
                 user: $event->user,
             );
         });
