@@ -208,15 +208,11 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.openai.timeout')
                             ->numeric()
                             ->minValue(1),
-                        TextInput::make('provider_settings.qdrant.api_key')
-                            ->label('Qdrant API Key')
-                            ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->placeholder('Not configured')
-                            ->helperText('Optional. Internal Railway Qdrant can run without an API key.'),
                         TextInput::make('provider_settings.qdrant.base_url')
                             ->label('Qdrant URL')
                             ->url()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->helperText('Internal Qdrant connection used by the app runtime.'),
                         TextInput::make('provider_settings.qdrant.collection')
                             ->label('Collection')
                             ->maxLength(255),
@@ -226,14 +222,10 @@ class AgentSettings extends Page
                         TextInput::make('provider_settings.qdrant.timeout')
                             ->numeric()
                             ->minValue(1),
-                        TextInput::make('provider_settings.railway.api_key')
-                            ->label('Railway API Key')
-                            ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->placeholder('Not configured')
-                            ->helperText('Optional. Only needed if this app must call Railway API directly.'),
                         TextInput::make('provider_settings.railway.project_id')
                             ->label('Project ID')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->helperText('Railway project used for this production workspace.'),
                         TextInput::make('provider_settings.railway.environment_id')
                             ->label('Environment ID')
                             ->maxLength(255),

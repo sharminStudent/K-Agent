@@ -132,10 +132,15 @@ class SuperAdminPanelTest extends TestCase
                     'qdrant' => [
                         'enabled' => true,
                         'api_key' => Crypt::encryptString('qdrant-secret-key'),
+                        'base_url' => 'http://qdrant.test:6333',
+                        'collection' => 'client_collection',
                     ],
                     'railway' => [
                         'enabled' => true,
                         'api_key' => Crypt::encryptString('railway-secret-key'),
+                        'project_id' => 'railway-project-id',
+                        'environment_id' => 'railway-environment-id',
+                        'service_id' => 'railway-service-id',
                     ],
                 ],
             ],
@@ -147,8 +152,13 @@ class SuperAdminPanelTest extends TestCase
             ->get('/super-admin/agent-settings')
             ->assertOk()
             ->assertSee('openai-secret-key')
-            ->assertSee('qdrant-secret-key')
-            ->assertSee('railway-secret-key')
+            ->assertSee('http://qdrant.test:6333')
+            ->assertSee('client_collection')
+            ->assertSee('railway-project-id')
+            ->assertSee('railway-environment-id')
+            ->assertSee('railway-service-id')
+            ->assertDontSee('Qdrant API Key')
+            ->assertDontSee('Railway API Key')
             ->assertDontSee('Use Client OpenAI Override')
             ->assertDontSee('Use Client Qdrant Override')
             ->assertDontSee('Use Client Railway Override');
@@ -157,8 +167,11 @@ class SuperAdminPanelTest extends TestCase
     public function test_super_admin_can_view_resolved_platform_provider_api_keys_in_agent_settings(): void
     {
         config()->set('services.openai.api_key', 'platform-openai-key');
-        config()->set('services.qdrant.api_key', 'platform-qdrant-key');
-        config()->set('services.railway.api_key', 'platform-railway-key');
+        config()->set('services.qdrant.url', 'http://platform-qdrant.test:6333');
+        config()->set('services.qdrant.collection', 'platform_collection');
+        config()->set('services.railway.project_id', 'platform-project-id');
+        config()->set('services.railway.environment_id', 'platform-environment-id');
+        config()->set('services.railway.service_id', 'platform-service-id');
 
         $agent = Agent::query()->create([
             'name' => 'Acme Assistant',
@@ -185,8 +198,13 @@ class SuperAdminPanelTest extends TestCase
             ->get('/super-admin/agent-settings')
             ->assertOk()
             ->assertSee('platform-openai-key')
-            ->assertSee('platform-qdrant-key')
-            ->assertSee('platform-railway-key');
+            ->assertSee('http://platform-qdrant.test:6333')
+            ->assertSee('platform_collection')
+            ->assertSee('platform-project-id')
+            ->assertSee('platform-environment-id')
+            ->assertSee('platform-service-id')
+            ->assertDontSee('Qdrant API Key')
+            ->assertDontSee('Railway API Key');
     }
 
     public function test_invalid_client_openai_placeholder_falls_back_to_platform_key(): void
