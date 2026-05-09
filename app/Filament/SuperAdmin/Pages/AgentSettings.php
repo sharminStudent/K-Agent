@@ -194,10 +194,8 @@ class AgentSettings extends Page
                             ->label('Use Client OpenAI Override'),
                         TextInput::make('provider_settings.openai.api_key')
                             ->label('OpenAI API Key')
-                            ->password()
-                            ->revealable()
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->helperText('Leave blank to keep the current key.'),
+                            ->helperText('Visible to super admin. Leave blank only if you want to keep the current key unchanged.'),
                         TextInput::make('provider_settings.openai.base_url')
                             ->label('OpenAI Base URL')
                             ->url()
@@ -215,10 +213,8 @@ class AgentSettings extends Page
                             ->label('Use Client Qdrant Override'),
                         TextInput::make('provider_settings.qdrant.api_key')
                             ->label('Qdrant API Key')
-                            ->password()
-                            ->revealable()
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->helperText('Leave blank to keep the current key.'),
+                            ->helperText('Visible to super admin. Leave blank only if you want to keep the current key unchanged.'),
                         TextInput::make('provider_settings.qdrant.base_url')
                             ->label('Qdrant URL')
                             ->url()
@@ -236,10 +232,8 @@ class AgentSettings extends Page
                             ->label('Use Client Railway Override'),
                         TextInput::make('provider_settings.railway.api_key')
                             ->label('Railway API Key')
-                            ->password()
-                            ->revealable()
                             ->dehydrateStateUsing(fn (?string $state): string => filled($state) ? $state : '__keep__')
-                            ->helperText('Leave blank to keep the current key.'),
+                            ->helperText('Visible to super admin. Leave blank only if you want to keep the current key unchanged.'),
                         TextInput::make('provider_settings.railway.project_id')
                             ->label('Project ID')
                             ->maxLength(255),
@@ -471,7 +465,7 @@ class AgentSettings extends Page
             'provider_settings' => [
                 'openai' => [
                     'enabled' => $providerSettings['openai']['enabled'] ?? false,
-                    'api_key' => null,
+                    'api_key' => $providerSettings['openai']['api_key'] ?? null,
                     'base_url' => $providerSettings['openai']['base_url'] ?? null,
                     'chat_model' => $providerSettings['openai']['chat_model'] ?? null,
                     'embedding_model' => $providerSettings['openai']['embedding_model'] ?? null,
@@ -479,7 +473,7 @@ class AgentSettings extends Page
                 ],
                 'qdrant' => [
                     'enabled' => $providerSettings['qdrant']['enabled'] ?? false,
-                    'api_key' => null,
+                    'api_key' => $providerSettings['qdrant']['api_key'] ?? null,
                     'base_url' => $providerSettings['qdrant']['url'] ?? null,
                     'collection' => $providerSettings['qdrant']['collection'] ?? null,
                     'distance' => $providerSettings['qdrant']['distance'] ?? null,
@@ -487,7 +481,7 @@ class AgentSettings extends Page
                 ],
                 'railway' => [
                     'enabled' => $providerSettings['railway']['enabled'] ?? false,
-                    'api_key' => null,
+                    'api_key' => $providerSettings['railway']['api_key'] ?? null,
                     'project_id' => $providerSettings['railway']['project_id'] ?? null,
                     'environment_id' => $providerSettings['railway']['environment_id'] ?? null,
                     'service_id' => $providerSettings['railway']['service_id'] ?? null,

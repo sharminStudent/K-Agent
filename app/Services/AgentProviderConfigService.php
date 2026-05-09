@@ -64,6 +64,7 @@ class AgentProviderConfigService
             'openai' => [
                 'enabled' => (bool) ($providers['openai']['enabled'] ?? false),
                 'has_api_key' => filled($providers['openai']['api_key'] ?? null),
+                'api_key' => $this->decrypt($providers['openai']['api_key'] ?? null),
                 'base_url' => $providers['openai']['base_url'] ?? null,
                 'chat_model' => $providers['openai']['chat_model'] ?? null,
                 'embedding_model' => $providers['openai']['embedding_model'] ?? null,
@@ -72,6 +73,7 @@ class AgentProviderConfigService
             'qdrant' => [
                 'enabled' => (bool) ($providers['qdrant']['enabled'] ?? false),
                 'has_api_key' => filled($providers['qdrant']['api_key'] ?? null),
+                'api_key' => $this->decrypt($providers['qdrant']['api_key'] ?? null),
                 'url' => $providers['qdrant']['base_url'] ?? null,
                 'collection' => $providers['qdrant']['collection'] ?? null,
                 'timeout' => $providers['qdrant']['timeout'] ?? null,
@@ -80,6 +82,7 @@ class AgentProviderConfigService
             'railway' => [
                 'enabled' => (bool) ($providers['railway']['enabled'] ?? false),
                 'has_api_key' => filled($providers['railway']['api_key'] ?? null),
+                'api_key' => $this->decrypt($providers['railway']['api_key'] ?? null),
                 'project_id' => $providers['railway']['project_id'] ?? null,
                 'environment_id' => $providers['railway']['environment_id'] ?? null,
                 'service_id' => $providers['railway']['service_id'] ?? null,

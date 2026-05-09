@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Agent;
 use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -114,5 +115,39 @@ class SuperAdminPanelTest extends TestCase
             ->get('/super-admin/admins/'.$superAdmin->getKey())
             ->assertOk()
             ->assertSee('super@agent.com');
+    }
+
+    public function test_super_admin_can_view_client_provider_api_keys_in_agent_settings(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+            'settings' => [
+                'provider_credentials' => [
+                    'openai' => [
+                        'enabled' => true,
+                        'api_key' => Crypt::encryptString('openai-secret-key'),
+                    ],
+                    'qdrant' => [
+                        'enabled' => true,
+                        'api_key' => Crypt::encryptString('qdrant-secret-key'),
+                    ],
+                    'railway' => [
+                        'enabled' => true,
+                        'api_key' => Crypt::encryptString('railway-secret-key'),
+                    ],
+                ],
+            ],
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/agent-settings')
+            ->assertOk()
+            ->assertSee('openai-secret-key')
+            ->assertSee('qdrant-secret-key')
+            ->assertSee('railway-secret-key');
     }
 }
