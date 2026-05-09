@@ -96,6 +96,7 @@ class ManageAgentPayments extends Page implements HasTable
                     }),
                 TextColumn::make('reference')
                     ->placeholder('-')
+                    ->copyable()
                     ->searchable(),
                 TextColumn::make('billing_period_start')
                     ->label('Billing Start')
@@ -107,11 +108,6 @@ class ManageAgentPayments extends Page implements HasTable
                     ->date('M j, Y')
                     ->placeholder('-')
                     ->toggleable(),
-                TextColumn::make('due_at')
-                    ->label('Due Date')
-                    ->dateTime('M j, Y g:i A')
-                    ->placeholder('-')
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('notes')
                     ->limit(60)
                     ->wrap()
@@ -148,8 +144,10 @@ class ManageAgentPayments extends Page implements HasTable
     {
         return [
             TextInput::make('reference')
-                ->label('Invoice or Reference')
-                ->maxLength(255),
+                ->label('Reference ID')
+                ->disabled()
+                ->dehydrated(false)
+                ->placeholder('Auto-generated on save'),
             TextInput::make('amount')
                 ->numeric()
                 ->required()
@@ -172,8 +170,6 @@ class ManageAgentPayments extends Page implements HasTable
                 ->label('Billing Period Start'),
             DatePicker::make('billing_period_end')
                 ->label('Billing Period End'),
-            DateTimePicker::make('due_at')
-                ->label('Due Date'),
             DateTimePicker::make('paid_at')
                 ->label('Payment Date'),
             Textarea::make('notes')

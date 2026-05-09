@@ -71,18 +71,18 @@ class SuperAdminNotificationService
     {
         return PaymentRecord::query()
             ->with('agent')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<=', now())
+            ->overdue()
             ->whereRaw('LOWER(status) in (?, ?)', [
                 PaymentRecord::STATUS_PENDING,
                 PaymentRecord::STATUS_FAILED,
             ])
-            ->orderBy('due_at')
-            ->limit(25)
             ->get()
             ->filter(fn (PaymentRecord $record): bool => $record->agent !== null)
+            ->sortBy(fn (PaymentRecord $record): int => $record->effectiveDueAt()?->timestamp ?? PHP_INT_MAX)
+            ->take(25)
             ->map(function (PaymentRecord $record): array {
                 $normalizedStatus = strtolower(trim((string) $record->status));
+                $effectiveDueAt = $record->effectiveDueAt();
 
                 return [
                     'alert_key' => 'billing:'.$record->getKey(),
@@ -93,7 +93,7 @@ class SuperAdminNotificationService
                     'body' => sprintf(
                         'Billing record %s was due %s and is still %s.',
                         $record->reference ?: '#'.$record->getKey(),
-                        optional($record->due_at)->format('M j, Y g:i A') ?? 'Unknown date',
+                        $effectiveDueAt?->format('M j, Y g:i A') ?? 'Unknown date',
                         str($normalizedStatus)->headline()->toString(),
                     ),
                     'client_id' => $record->agent_id,
