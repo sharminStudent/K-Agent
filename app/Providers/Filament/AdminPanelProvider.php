@@ -4,7 +4,6 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
 use App\Filament\Widgets\CompanyStats;
-use App\Filament\Widgets\ConversationTrends;
 use App\Filament\Widgets\RecentChatSessionsTable;
 use App\Filament\Widgets\RecentLeadsTable;
 use App\Support\WorkspaceBranding;
@@ -73,7 +72,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->widgets([
                 CompanyStats::class,
-                ConversationTrends::class,
                 RecentChatSessionsTable::class,
                 RecentLeadsTable::class,
             ])
