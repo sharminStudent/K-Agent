@@ -44,6 +44,8 @@ class Profile extends Page
      */
     public ?array $data = [];
 
+    public bool $passwordChangeUnlocked = false;
+
     public static function canAccess(): bool
     {
         return (bool) Filament::auth()->user()?->isSuperAdmin();
@@ -62,6 +64,8 @@ class Profile extends Page
             'new_password' => null,
             'new_password_confirmation' => null,
         ]);
+
+        $this->passwordChangeUnlocked = false;
     }
 
     public function getTitle(): string|Htmlable
@@ -128,20 +132,70 @@ class Profile extends Page
                         TextInput::make('current_password')
                             ->label('Current Password')
                             ->password()
-                            ->revealable(),
+                            ->revealable()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (): void {
+                                $this->passwordChangeUnlocked = false;
+                                data_set($this->data, 'new_password', null);
+                                data_set($this->data, 'new_password_confirmation', null);
+                            }),
+                        Actions::make([
+                            Action::make('verifyCurrentPassword')
+                                ->label('Send')
+                                ->action('verifyCurrentPassword')
+                                ->color('primary'),
+                        ])
+                            ->columnSpanFull(),
                         TextInput::make('new_password')
                             ->label('New Password')
                             ->password()
                             ->revealable()
                             ->rule(Password::defaults())
-                            ->same('new_password_confirmation'),
+                            ->same('new_password_confirmation')
+                            ->visible(fn (): bool => $this->passwordChangeUnlocked),
                         TextInput::make('new_password_confirmation')
                             ->label('Confirm New Password')
                             ->password()
-                            ->revealable(),
+                            ->revealable()
+                            ->visible(fn (): bool => $this->passwordChangeUnlocked),
                     ])
                     ->columns(2),
             ]);
+    }
+
+    public function verifyCurrentPassword(): void
+    {
+        $currentPassword = data_get($this->form->getState(), 'current_password');
+        $user = Filament::auth()->user();
+
+        if (! filled($currentPassword)) {
+            $this->passwordChangeUnlocked = false;
+            $this->addError('data.current_password', 'Enter your current password first.');
+
+            return;
+        }
+
+        if (! Hash::check((string) $currentPassword, (string) $user?->password)) {
+            $this->passwordChangeUnlocked = false;
+            $this->addError('data.current_password', 'The current password is incorrect.');
+
+            Notification::make()
+                ->danger()
+                ->title('Password not verified')
+                ->body('The current password is incorrect.')
+                ->send();
+
+            return;
+        }
+
+        $this->resetErrorBag('data.current_password');
+        $this->passwordChangeUnlocked = true;
+
+        Notification::make()
+            ->success()
+            ->title('Password verified')
+            ->body('You can now enter a new password.')
+            ->send();
     }
 
     public function content(Schema $schema): Schema
@@ -171,6 +225,16 @@ class Profile extends Page
 
         $user = Filament::auth()->user();
         abort_unless($user, 403);
+
+        if (filled($state['new_password'] ?? null) && ! $this->passwordChangeUnlocked) {
+            Notification::make()
+                ->danger()
+                ->title('Password not changed')
+                ->body('Verify your current password before setting a new one.')
+                ->send();
+
+            return;
+        }
 
         $user->update([
             'name' => $state['name'] ?? null,

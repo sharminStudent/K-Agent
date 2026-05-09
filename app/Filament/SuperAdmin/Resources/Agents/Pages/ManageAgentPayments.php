@@ -130,11 +130,13 @@ class ManageAgentPayments extends Page implements HasTable
                 Action::make('invoice')
                     ->label('Generate Invoice')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
                     ->url(
                         fn (PaymentRecord $record): string => route('super-admin.payment-records.invoice', $record),
                         shouldOpenInNewTab: true
                     ),
                 EditAction::make()
+                    ->color('gray')
                     ->schema($this->getPaymentFormSchema()),
                 DeleteAction::make(),
             ])
