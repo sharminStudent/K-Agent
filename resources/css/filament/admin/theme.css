@@ -335,17 +335,23 @@ a.fi-icon-btn-color-primary:focus * {
 .fi-simple-page .fi-input-wrp input,
 .fi-simple-page .fi-input-wrp textarea,
 .fi-simple-page .fi-input-wrp select {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
 }
 
 .fi-simple-page input,
 .fi-simple-page textarea,
 .fi-simple-page select {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+}
+
+.fi-simple-page .fi-input::placeholder,
+.fi-simple-page .fi-input-wrp input::placeholder,
+.fi-simple-page .fi-input-wrp textarea::placeholder {
+    color: #64748b !important;
 }
 
 .fi-simple-layout .fi-btn[type='submit'] {

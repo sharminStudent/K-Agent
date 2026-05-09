@@ -72,24 +72,29 @@ class SuperAdminNotificationService
         return PaymentRecord::query()
             ->with('agent')
             ->whereNotNull('due_at')
-            ->where('due_at', '<', now())
-            ->whereIn('status', [PaymentRecord::STATUS_PENDING, PaymentRecord::STATUS_FAILED])
+            ->where('due_at', '<=', now())
+            ->whereRaw('LOWER(status) in (?, ?)', [
+                PaymentRecord::STATUS_PENDING,
+                PaymentRecord::STATUS_FAILED,
+            ])
             ->orderBy('due_at')
             ->limit(25)
             ->get()
             ->filter(fn (PaymentRecord $record): bool => $record->agent !== null)
             ->map(function (PaymentRecord $record): array {
+                $normalizedStatus = strtolower(trim((string) $record->status));
+
                 return [
                     'alert_key' => 'billing:'.$record->getKey(),
                     'type' => 'billing_overdue',
                     'category' => 'billing',
-                    'severity' => $record->status === PaymentRecord::STATUS_FAILED ? 'critical' : 'high',
+                    'severity' => $normalizedStatus === PaymentRecord::STATUS_FAILED ? 'critical' : 'high',
                     'title' => ($record->agent?->company_name ?? 'Client').' payment is overdue',
                     'body' => sprintf(
                         'Billing record %s was due %s and is still %s.',
                         $record->reference ?: '#'.$record->getKey(),
                         optional($record->due_at)->format('M j, Y g:i A') ?? 'Unknown date',
-                        str($record->status)->headline()->toString(),
+                        str($normalizedStatus)->headline()->toString(),
                     ),
                     'client_id' => $record->agent_id,
                     'client_name' => $record->agent?->company_name,
