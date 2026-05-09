@@ -308,4 +308,34 @@ class SuperAdminPanelTest extends TestCase
         $this->assertSame('Client B', $notification->data['client_name'] ?? null);
         $this->assertSame('critical', $notification->data['severity'] ?? null);
     }
+
+    public function test_super_admin_can_download_a_payment_record_invoice_pdf(): void
+    {
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'acme-demo-widget',
+            'contact_email' => 'billing@acme.test',
+            'website_url' => 'https://acme.test',
+        ]);
+
+        $paymentRecord = PaymentRecord::query()->create([
+            'agent_id' => $agent->id,
+            'amount' => 149.50,
+            'currency' => 'BHD',
+            'status' => PaymentRecord::STATUS_PAID,
+            'billing_period_start' => now()->startOfMonth()->toDateString(),
+            'billing_period_end' => now()->endOfMonth()->toDateString(),
+            'paid_at' => now(),
+            'notes' => 'Professional plan renewal',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('super-admin.payment-records.invoice', $paymentRecord))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'attachment; filename="invoice-'.strtolower((string) $paymentRecord->fresh()->reference).'.pdf"');
+    }
 }

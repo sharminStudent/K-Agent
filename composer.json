@@ -9,6 +9,7 @@
         "php": "^8.4",
         "ext-intl": "*",
         "ext-zip": "*",
+        "dompdf/dompdf": "3.1",
         "filament/filament": "~5.0",
         "laravel/framework": "^13.0",
         "laravel/reverb": "^1.10",

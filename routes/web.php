@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Filament\TranscriptDownloadController;
+use App\Http\Controllers\Filament\PaymentRecordInvoiceController;
 use App\Http\Controllers\WidgetController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +18,6 @@ Route::prefix('widget/{widgetToken}')->group(function (): void {
 
 Route::middleware('auth')->get('/admin/chat-sessions/{chatSession}/transcript', TranscriptDownloadController::class)
     ->name('admin.chat-sessions.transcript');
+
+Route::middleware('auth')->get('/super-admin/payment-records/{paymentRecord}/invoice', PaymentRecordInvoiceController::class)
+    ->name('super-admin.payment-records.invoice');
