@@ -11,9 +11,15 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasMaxWidth;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\EmbeddedSchema;
+use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
+
+/**
+ * @property-read Schema $form
+ */
 class ViewAgent extends Page
 {
     use HasMaxWidth;
@@ -23,9 +29,18 @@ class ViewAgent extends Page
 
     protected Width|string|null $maxContentWidth = Width::Full;
 
+    /**
+     * @var array<string, mixed> | null
+     */
+    public ?array $data = [];
+
     public function mount(int | string $record): void
     {
         $this->record = $this->resolveRecord($record);
+
+        $this->form->fill(
+            AgentResource::mutateRecordDataForForm($this->record->attributesToArray(), $this->record),
+        );
     }
 
     public function getTitle(): string | Htmlable
@@ -98,8 +113,26 @@ class ViewAgent extends Page
         ];
     }
 
+    public function defaultForm(Schema $schema): Schema
+    {
+        return $schema
+            ->operation('edit')
+            ->statePath('data');
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return AgentResource::form($schema);
+    }
+
     public function content(Schema $schema): Schema
     {
-        return AgentResource::infolist($schema);
+        return $schema
+            ->components([
+                Form::make([
+                    EmbeddedSchema::make('form'),
+                ])
+                    ->disabled(),
+            ]);
     }
 }
