@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ActivityLogService;
 use App\Services\SuperAdminNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +50,31 @@ class PaymentRecord extends Model
             if (blank($record->reference)) {
                 $record->reference = $record->generateReference();
             }
+        });
+
+        static::created(function (PaymentRecord $record): void {
+            $user = auth()->user();
+
+            if (! $user instanceof User) {
+                return;
+            }
+
+            app(ActivityLogService::class)->log(
+                event: 'billing.record.created',
+                description: 'A billing record was created.',
+                category: 'billing',
+                severity: 'normal',
+                status: 'success',
+                agent: $record->agent,
+                user: $user,
+                subject: $record,
+                meta: [
+                    'reference' => $record->reference,
+                    'amount' => $record->amount,
+                    'currency' => $record->currency,
+                    'status' => $record->status,
+                ],
+            );
         });
 
         static::saved(function (): void {

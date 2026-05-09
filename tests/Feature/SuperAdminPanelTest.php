@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agent;
+use App\Models\ActivityLog;
 use App\Models\PaymentRecord;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
@@ -337,5 +338,37 @@ class SuperAdminPanelTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf')
             ->assertHeader('content-disposition', 'attachment; filename="invoice-'.strtolower((string) $paymentRecord->fresh()->reference).'.pdf"');
+
+        $this->assertDatabaseHas(ActivityLog::class, [
+            'event' => 'billing.invoice.generated',
+            'user_id' => $superAdmin->id,
+            'subject_id' => $paymentRecord->id,
+        ]);
+    }
+
+    public function test_creating_a_payment_record_logs_a_billing_activity(): void
+    {
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'acme-demo-widget',
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        $paymentRecord = PaymentRecord::query()->create([
+            'agent_id' => $agent->id,
+            'amount' => 89.00,
+            'currency' => 'BHD',
+            'status' => PaymentRecord::STATUS_PENDING,
+        ]);
+
+        $this->assertDatabaseHas(ActivityLog::class, [
+            'event' => 'billing.record.created',
+            'user_id' => $superAdmin->id,
+            'subject_id' => $paymentRecord->id,
+        ]);
     }
 }
