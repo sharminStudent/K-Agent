@@ -144,6 +144,30 @@ class AgentProviderConfigService
         ];
     }
 
+    /**
+     * @return array{api_key: string|null, project_id: string|null, environment_id: string|null, service_id: string|null}
+     */
+    public function railwayConfig(?Agent $agent = null): array
+    {
+        $provider = $agent?->settings['provider_credentials']['railway'] ?? [];
+        $enabled = (bool) ($provider['enabled'] ?? false);
+
+        return [
+            'api_key' => $enabled
+                ? ($this->decrypt($provider['api_key'] ?? null) ?: config('services.railway.api_key'))
+                : config('services.railway.api_key'),
+            'project_id' => $enabled
+                ? ($provider['project_id'] ?? config('services.railway.project_id'))
+                : config('services.railway.project_id'),
+            'environment_id' => $enabled
+                ? ($provider['environment_id'] ?? config('services.railway.environment_id'))
+                : config('services.railway.environment_id'),
+            'service_id' => $enabled
+                ? ($provider['service_id'] ?? config('services.railway.service_id'))
+                : config('services.railway.service_id'),
+        ];
+    }
+
     protected function resolveSecretValue(mixed $value, ?string $existing): ?string
     {
         if ($value === '__keep__') {

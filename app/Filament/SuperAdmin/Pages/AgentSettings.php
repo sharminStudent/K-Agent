@@ -440,7 +440,11 @@ class AgentSettings extends Page
             return;
         }
 
-        $providerSettings = app(AgentProviderConfigService::class)->sanitizedProviderSettings($this->agentRecord);
+        $providerConfigService = app(AgentProviderConfigService::class);
+        $providerSettings = $providerConfigService->sanitizedProviderSettings($this->agentRecord);
+        $resolvedOpenAi = $providerConfigService->openAiConfig($this->agentRecord);
+        $resolvedQdrant = $providerConfigService->qdrantConfig($this->agentRecord);
+        $resolvedRailway = $providerConfigService->railwayConfig($this->agentRecord);
 
         $this->form->fill([
             'selected_agent_id' => $this->agentRecord->getKey(),
@@ -465,26 +469,26 @@ class AgentSettings extends Page
             'provider_settings' => [
                 'openai' => [
                     'enabled' => $providerSettings['openai']['enabled'] ?? false,
-                    'api_key' => $providerSettings['openai']['api_key'] ?? null,
-                    'base_url' => $providerSettings['openai']['base_url'] ?? null,
-                    'chat_model' => $providerSettings['openai']['chat_model'] ?? null,
-                    'embedding_model' => $providerSettings['openai']['embedding_model'] ?? null,
-                    'timeout' => $providerSettings['openai']['timeout'] ?? null,
+                    'api_key' => $resolvedOpenAi['api_key'] ?? null,
+                    'base_url' => $resolvedOpenAi['base_url'] ?? null,
+                    'chat_model' => $resolvedOpenAi['chat_model'] ?? null,
+                    'embedding_model' => $resolvedOpenAi['embedding_model'] ?? null,
+                    'timeout' => $resolvedOpenAi['timeout'] ?? null,
                 ],
                 'qdrant' => [
                     'enabled' => $providerSettings['qdrant']['enabled'] ?? false,
-                    'api_key' => $providerSettings['qdrant']['api_key'] ?? null,
-                    'base_url' => $providerSettings['qdrant']['url'] ?? null,
-                    'collection' => $providerSettings['qdrant']['collection'] ?? null,
-                    'distance' => $providerSettings['qdrant']['distance'] ?? null,
-                    'timeout' => $providerSettings['qdrant']['timeout'] ?? null,
+                    'api_key' => $resolvedQdrant['api_key'] ?? null,
+                    'base_url' => $resolvedQdrant['url'] ?? null,
+                    'collection' => $resolvedQdrant['collection'] ?? null,
+                    'distance' => $resolvedQdrant['distance'] ?? null,
+                    'timeout' => $resolvedQdrant['timeout'] ?? null,
                 ],
                 'railway' => [
                     'enabled' => $providerSettings['railway']['enabled'] ?? false,
-                    'api_key' => $providerSettings['railway']['api_key'] ?? null,
-                    'project_id' => $providerSettings['railway']['project_id'] ?? null,
-                    'environment_id' => $providerSettings['railway']['environment_id'] ?? null,
-                    'service_id' => $providerSettings['railway']['service_id'] ?? null,
+                    'api_key' => $resolvedRailway['api_key'] ?? null,
+                    'project_id' => $resolvedRailway['project_id'] ?? null,
+                    'environment_id' => $resolvedRailway['environment_id'] ?? null,
+                    'service_id' => $resolvedRailway['service_id'] ?? null,
                 ],
             ],
         ]);

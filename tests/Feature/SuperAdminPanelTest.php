@@ -150,4 +150,39 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('qdrant-secret-key')
             ->assertSee('railway-secret-key');
     }
+
+    public function test_super_admin_can_view_resolved_platform_provider_api_keys_in_agent_settings(): void
+    {
+        config()->set('services.openai.api_key', 'platform-openai-key');
+        config()->set('services.qdrant.api_key', 'platform-qdrant-key');
+        config()->set('services.railway.api_key', 'platform-railway-key');
+
+        $agent = Agent::query()->create([
+            'name' => 'Acme Assistant',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+            'settings' => [
+                'provider_credentials' => [
+                    'openai' => [
+                        'enabled' => false,
+                    ],
+                    'qdrant' => [
+                        'enabled' => false,
+                    ],
+                    'railway' => [
+                        'enabled' => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $this->actingAs($superAdmin)
+            ->get('/super-admin/agent-settings')
+            ->assertOk()
+            ->assertSee('platform-openai-key')
+            ->assertSee('platform-qdrant-key')
+            ->assertSee('platform-railway-key');
+    }
 }

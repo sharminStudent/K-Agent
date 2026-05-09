@@ -51,6 +51,13 @@ return [
         'distance' => env('QDRANT_DISTANCE', 'Cosine'),
     ],
 
+    'railway' => [
+        'api_key' => env('RAILWAY_TOKEN'),
+        'project_id' => env('RAILWAY_PROJECT_ID'),
+        'environment_id' => env('RAILWAY_ENVIRONMENT'),
+        'service_id' => env('RAILWAY_SERVICE'),
+    ],
+
     'rag' => [
         'top_k' => (int) env('RAG_TOP_K', 5),
         'min_keyword_score' => (int) env('RAG_MIN_KEYWORD_SCORE', 1),
