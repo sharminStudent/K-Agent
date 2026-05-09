@@ -121,8 +121,11 @@ class CompanyNotifications extends Page implements HasTable
                     ->icon(Heroicon::OutlinedTrash)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (self $livewire): bool => count($livewire->selectedTableRecords) === 1)
                     ->action(fn (Collection $records) => $this->deleteRecords($records))
+                    ->extraAttributes([
+                        'x-cloak' => true,
+                        'x-show' => 'getSelectedRecordsCount() === 1',
+                    ])
                     ->deselectRecordsAfterCompletion(),
                 BulkActionGroup::make([
                     BulkAction::make('bulkRead')
@@ -144,7 +147,10 @@ class CompanyNotifications extends Page implements HasTable
                         ->deselectRecordsAfterCompletion(),
                 ])
                     ->label('Bulk action')
-                    ->visible(fn (self $livewire): bool => count($livewire->selectedTableRecords) > 1),
+                    ->extraAttributes([
+                        'x-cloak' => true,
+                        'x-show' => 'getSelectedRecordsCount() > 1',
+                    ]),
             ])
             ->emptyStateHeading('No notifications yet')
             ->emptyStateDescription('Lead alerts and workspace notifications will appear here.');
