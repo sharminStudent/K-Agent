@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SuperAdminNotificationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -37,6 +38,17 @@ class PaymentRecord extends Model
             'due_at' => 'datetime',
             'paid_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (): void {
+            app(SuperAdminNotificationService::class)->sync();
+        });
+
+        static::deleted(function (): void {
+            app(SuperAdminNotificationService::class)->sync();
+        });
     }
 
     public function agent(): BelongsTo

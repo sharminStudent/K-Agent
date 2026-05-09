@@ -271,4 +271,41 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('Acme Demo account requires billing attention')
             ->assertSee('Acme Demo has recent runtime errors');
     }
+
+    public function test_overdue_failed_billing_record_creates_super_admin_notification_on_save(): void
+    {
+        $superAdmin = User::query()->where('email', 'super@agent.com')->firstOrFail();
+
+        $agent = Agent::query()->create([
+            'name' => 'Client B Assistant',
+            'company_name' => 'Client B',
+            'widget_token' => 'client-b-widget-token',
+            'payment_status' => Agent::PAYMENT_STATUS_ACTIVE,
+        ]);
+
+        $paymentRecord = PaymentRecord::query()->create([
+            'agent_id' => $agent->id,
+            'reference' => 'INV-B-1002',
+            'amount' => 60,
+            'currency' => 'BHD',
+            'status' => PaymentRecord::STATUS_PENDING,
+            'due_at' => now()->addDay(),
+        ]);
+
+        $paymentRecord->update([
+            'status' => PaymentRecord::STATUS_FAILED,
+            'due_at' => now()->subDay(),
+        ]);
+
+        $notification = $superAdmin->fresh()
+            ->notifications
+            ->first(function ($notification): bool {
+                return ($notification->data['type'] ?? null) === 'billing_overdue';
+            });
+
+        $this->assertNotNull($notification);
+        $this->assertSame('Client B payment is overdue', $notification->data['title'] ?? null);
+        $this->assertSame('Client B', $notification->data['client_name'] ?? null);
+        $this->assertSame('critical', $notification->data['severity'] ?? null);
+    }
 }

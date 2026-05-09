@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SuperAdminNotificationService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,6 +83,12 @@ class Agent extends Model
 
             if (blank($agent->widget_token)) {
                 $agent->widget_token = Str::random(40);
+            }
+        });
+
+        static::saved(function (Agent $agent): void {
+            if ($agent->wasChanged(['payment_status', 'subscription_plan', 'last_error_at', 'is_active'])) {
+                app(SuperAdminNotificationService::class)->sync();
             }
         });
     }

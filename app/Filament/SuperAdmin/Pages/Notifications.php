@@ -2,12 +2,9 @@
 
 namespace App\Filament\SuperAdmin\Pages;
 
-use App\Filament\SuperAdmin\Resources\Agents\AgentResource;
-use App\Models\Agent;
-use App\Models\PaymentRecord;
-use App\Models\User;
 use App\Notifications\SuperAdminAlertDatabaseNotification;
 use App\Services\ActivityLogService;
+use App\Services\SuperAdminNotificationService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -28,7 +25,6 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 use UnitEnum;
 
 class Notifications extends Page implements HasTable
@@ -53,7 +49,7 @@ class Notifications extends Page implements HasTable
 
     public function mount(): void
     {
-        $this->syncAlerts();
+        app(SuperAdminNotificationService::class)->sync();
     }
 
     public function getTitle(): string|Htmlable
@@ -68,7 +64,7 @@ class Notifications extends Page implements HasTable
                 ->label('Refresh')
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->action(function (): void {
-                    $this->syncAlerts();
+                    app(SuperAdminNotificationService::class)->sync();
 
                     Notification::make()
                         ->success()
@@ -218,151 +214,6 @@ class Notifications extends Page implements HasTable
         return $user->notifications()
             ->getQuery()
             ->where('type', SuperAdminAlertDatabaseNotification::class);
-    }
-
-    protected function syncAlerts(): void
-    {
-        $user = Filament::auth()->user();
-
-        if (! $user instanceof User || ! $user->isSuperAdmin()) {
-            return;
-        }
-
-        $alerts = $this->buildAlerts()->keyBy('alert_key');
-
-        $existing = $user->notifications()
-            ->where('type', SuperAdminAlertDatabaseNotification::class)
-            ->get()
-            ->keyBy(fn (DatabaseNotification $notification): string => (string) data_get($notification->data, 'alert_key'));
-
-        $staleKeys = $existing->keys()->diff($alerts->keys());
-
-        if ($staleKeys->isNotEmpty()) {
-            $existing->only($staleKeys->all())->each->delete();
-        }
-
-        $alerts->each(function (array $payload, string $alertKey) use ($existing, $user): void {
-            /** @var DatabaseNotification|null $notification */
-            $notification = $existing->get($alertKey);
-
-            if ($notification) {
-                $notification->forceFill([
-                    'data' => $payload,
-                ])->save();
-
-                return;
-            }
-
-            $user->notifications()->create([
-                'id' => (string) Str::uuid(),
-                'type' => SuperAdminAlertDatabaseNotification::class,
-                'data' => $payload,
-            ]);
-        });
-    }
-
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function buildAlerts(): Collection
-    {
-        return $this->billingAlerts()
-            ->concat($this->accountAlerts())
-            ->concat($this->runtimeAlerts())
-            ->values();
-    }
-
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function billingAlerts(): Collection
-    {
-        return PaymentRecord::query()
-            ->with('agent')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', now())
-            ->whereIn('status', [PaymentRecord::STATUS_PENDING, PaymentRecord::STATUS_FAILED])
-            ->orderBy('due_at')
-            ->limit(25)
-            ->get()
-            ->filter(fn (PaymentRecord $record): bool => $record->agent !== null)
-            ->map(function (PaymentRecord $record): array {
-                return [
-                    'alert_key' => 'billing:'.$record->getKey(),
-                    'type' => 'billing_overdue',
-                    'category' => 'billing',
-                    'severity' => $record->status === PaymentRecord::STATUS_FAILED ? 'critical' : 'high',
-                    'title' => ($record->agent?->company_name ?? 'Client').' payment is overdue',
-                    'body' => sprintf(
-                        'Billing record %s was due %s and is still %s.',
-                        $record->reference ?: '#'.$record->getKey(),
-                        optional($record->due_at)->format('M j, Y g:i A') ?? 'Unknown date',
-                        str($record->status)->headline()->toString(),
-                    ),
-                    'client_id' => $record->agent_id,
-                    'client_name' => $record->agent?->company_name,
-                    'url' => AgentResource::getUrl('billing', ['record' => $record->agent_id]),
-                ];
-            })
-            ->values();
-    }
-
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function accountAlerts(): Collection
-    {
-        return Agent::query()
-            ->whereIn('payment_status', [
-                Agent::PAYMENT_STATUS_PAST_DUE,
-                Agent::PAYMENT_STATUS_SUSPENDED,
-                Agent::PAYMENT_STATUS_CANCELED,
-            ])
-            ->orderBy('company_name')
-            ->limit(25)
-            ->get()
-            ->map(function (Agent $agent): array {
-                return [
-                    'alert_key' => 'account:'.$agent->getKey().':'.$agent->payment_status,
-                    'type' => 'account_attention',
-                    'category' => 'account',
-                    'severity' => match ($agent->payment_status) {
-                        Agent::PAYMENT_STATUS_SUSPENDED => 'critical',
-                        Agent::PAYMENT_STATUS_CANCELED => 'high',
-                        default => 'high',
-                    },
-                    'title' => $agent->company_name.' account requires billing attention',
-                    'body' => 'Client payment status is currently '.str((string) $agent->payment_status)->headline()->toString().'.',
-                    'client_id' => $agent->getKey(),
-                    'client_name' => $agent->company_name,
-                    'url' => AgentResource::getUrl('edit', ['record' => $agent]),
-                ];
-            });
-    }
-
-    /**
-     * @return Collection<int, array<string, mixed>>
-     */
-    protected function runtimeAlerts(): Collection
-    {
-        return Agent::query()
-            ->whereNotNull('last_error_at')
-            ->orderByDesc('last_error_at')
-            ->limit(15)
-            ->get()
-            ->map(function (Agent $agent): array {
-                return [
-                    'alert_key' => 'runtime:'.$agent->getKey().':'.$agent->last_error_at?->timestamp,
-                    'type' => 'runtime_error',
-                    'category' => 'runtime',
-                    'severity' => 'normal',
-                    'title' => $agent->company_name.' has recent runtime errors',
-                    'body' => 'Last provider/runtime error was recorded '.$agent->last_error_at?->diffForHumans().'.',
-                    'client_id' => $agent->getKey(),
-                    'client_name' => $agent->company_name,
-                    'url' => AgentResource::getUrl('edit', ['record' => $agent]),
-                ];
-            });
     }
 
     protected function markRecordsAsRead(Collection $records): void
