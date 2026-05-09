@@ -6,39 +6,37 @@
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
-            color: #0f172a;
+            color: #1f2937;
             margin: 0;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.55;
             background: #ffffff;
         }
 
         .page {
-            padding: 38px 42px;
+            padding: 34px 38px;
         }
 
         .header {
             width: 100%;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 24px;
-            margin-bottom: 28px;
+            border-bottom: 1px solid #d1d5db;
+            padding-bottom: 18px;
+            margin-bottom: 26px;
         }
 
         .logo {
-            max-width: 160px;
-            max-height: 58px;
+            max-width: 155px;
+            max-height: 54px;
         }
 
         .logo-fallback {
             display: inline-block;
-            padding: 10px 18px;
-            border: 1px solid #fecdd3;
-            border-radius: 999px;
-            background: #fff1f2;
-            color: #d3033d;
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            color: #111827;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
             text-transform: uppercase;
         }
 
@@ -48,33 +46,51 @@
 
         .headline h1 {
             margin: 0;
-            font-size: 30px;
-            color: #d3033d;
-            letter-spacing: 1px;
+            font-size: 26px;
+            color: #111827;
+            letter-spacing: 0.6px;
         }
 
         .headline p {
-            margin: 6px 0 0;
-            color: #475569;
+            margin: 5px 0 0;
+            color: #4b5563;
         }
 
         .block {
             margin-bottom: 24px;
         }
 
+        .company-meta {
+            margin-top: 10px;
+            color: #4b5563;
+            font-size: 11px;
+        }
+
+        .company-meta div {
+            margin-bottom: 2px;
+        }
+
+        .two-col {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .two-col td {
+            vertical-align: top;
+        }
+
         .section-title {
             margin: 0 0 10px;
             font-size: 11px;
-            color: #64748b;
+            color: #6b7280;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 0.9px;
         }
 
         .card {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px 18px;
-            background: #f8fafc;
+            border: 1px solid #d1d5db;
+            padding: 14px 16px;
+            background: #ffffff;
         }
 
         .meta-table,
@@ -85,66 +101,81 @@
 
         .meta-table td {
             vertical-align: top;
-            padding: 6px 0;
+            padding: 5px 0;
         }
 
         .meta-label {
-            width: 34%;
-            color: #64748b;
+            width: 38%;
+            color: #6b7280;
         }
 
         .amount-table th,
         .amount-table td {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 12px 10px;
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
             text-align: left;
         }
 
         .amount-table th {
-            background: #f1f5f9;
-            color: #334155;
+            background: #f3f4f6;
+            color: #111827;
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
         }
 
         .amount-table tfoot td {
             font-weight: 700;
             font-size: 14px;
-            background: #fff7fa;
+            background: #f9fafb;
         }
 
         .status {
             display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
+            padding: 3px 8px;
+            border: 1px solid #d1d5db;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            background: #fee2e2;
-            color: #b91c1c;
+            letter-spacing: 0.5px;
+            background: #ffffff;
+            color: #111827;
         }
 
         .status.paid {
-            background: #dcfce7;
+            border-color: #bbf7d0;
+            background: #f0fdf4;
             color: #166534;
         }
 
         .status.pending {
-            background: #fef3c7;
-            color: #b45309;
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .status.failed {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
         }
 
         .status.refunded {
-            background: #e2e8f0;
-            color: #475569;
+            border-color: #d1d5db;
+            background: #f9fafb;
+            color: #4b5563;
         }
 
         .footer {
-            margin-top: 32px;
-            color: #64748b;
+            margin-top: 28px;
+            padding-top: 14px;
+            border-top: 1px solid #d1d5db;
+            color: #6b7280;
             font-size: 11px;
+        }
+
+        .text-muted {
+            color: #6b7280;
         }
     </style>
 </head>
@@ -152,6 +183,11 @@
 @php
     $status = strtolower((string) $paymentRecord->status);
     $amount = number_format((float) $paymentRecord->amount, 2);
+    $billingPeriod = trim(
+        (optional($paymentRecord->billing_period_start)->format('M j, Y') ?? '-')
+        .' to '.
+        (optional($paymentRecord->billing_period_end)->format('M j, Y') ?? '-')
+    );
 @endphp
 <div class="page">
     <table class="header">
@@ -162,6 +198,10 @@
                 @else
                     <span class="logo-fallback">K-Agent</span>
                 @endif
+                <div class="company-meta">
+                    <div>K-Agent</div>
+                    <div>Internal Billing Invoice</div>
+                </div>
             </td>
             <td class="headline">
                 <h1>INVOICE</h1>
@@ -171,7 +211,7 @@
     </table>
 
     <div class="block">
-        <table width="100%">
+        <table class="two-col">
             <tr>
                 <td width="50%" style="padding-right: 10px;">
                     <p class="section-title">Billed To</p>
@@ -196,11 +236,7 @@
                             </tr>
                             <tr>
                                 <td class="meta-label">Billing Period</td>
-                                <td>
-                                    {{ optional($paymentRecord->billing_period_start)->format('M j, Y') ?? '-' }}
-                                    -
-                                    {{ optional($paymentRecord->billing_period_end)->format('M j, Y') ?? '-' }}
-                                </td>
+                                <td>{{ $billingPeriod }}</td>
                             </tr>
                             <tr>
                                 <td class="meta-label">Status</td>
@@ -227,7 +263,7 @@
                 <td>
                     Workspace billing for {{ $agent?->company_name ?? 'Client' }}
                     @if ($paymentRecord->notes)
-                        <br><span style="color:#64748b;">{{ $paymentRecord->notes }}</span>
+                        <br><span class="text-muted">{{ $paymentRecord->notes }}</span>
                     @endif
                 </td>
                 <td>{{ $amount }} {{ strtoupper((string) $paymentRecord->currency) }}</td>
