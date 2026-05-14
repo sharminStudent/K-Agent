@@ -26,15 +26,14 @@ class WidgetWebTest extends TestCase
         $response->assertHeader('Content-Type', 'application/javascript; charset=UTF-8');
         $response->assertSee('widget\\/'.$agent->widget_token.'\\/frame', false);
         $response->assertSee("frame.style.width = '360px';", false);
-        $response->assertSee("var isSmallScreen = window.matchMedia('(max-width: 640px)').matches;", false);
-        $response->assertSee("frame.style.width = compactScreen ? 'calc(100vw - 16px)' : '360px';", false);
+        $response->assertSee("var isPhoneScreen = window.matchMedia('(max-width: 640px)').matches;", false);
+        $response->assertSee("var isVeryNarrowScreen = window.matchMedia('(max-width: 420px)').matches;", false);
         $response->assertSee("frame.style.height = '500px';", false);
-        $response->assertSee("var compactScreen = isSmallScreen;", false);
-        $response->assertSee("frame.style.bottom = compactScreen ? 'max(76px, calc(env(safe-area-inset-bottom) + 68px))' : (isShortScreen ? '24px' : '88px');", false);
-        $response->assertSee("frame.style.height = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : '500px';", false);
-        $response->assertSee("frame.style.maxHeight = compactScreen ? 'calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : 'calc(100vh - 48px)';", false);
+        $response->assertSee("frame.style.bottom = 'max(74px, calc(env(safe-area-inset-bottom) + 62px))';", false);
+        $response->assertSee("frame.style.width = isVeryNarrowScreen ? 'calc(100vw - 24px)' : 'min(340px, calc(100vw - 24px))';", false);
+        $response->assertSee("frame.style.maxHeight = 'calc(100dvh - 98px - env(safe-area-inset-top) - env(safe-area-inset-bottom))';", false);
         $response->assertSee("launcher.style.pointerEvents = isOpen ? 'none' : 'auto';", false);
-        $response->assertSee("launcher.style.bottom = compactScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';", false);
+        $response->assertSee("launcher.style.bottom = isPhoneScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';", false);
         $response->assertSee('event.source !== frame.contentWindow', false);
         $response->assertSee("event.key === 'Escape'", false);
     }
@@ -154,6 +153,70 @@ class WidgetWebTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('data.session', null);
+    }
+
+    public function test_it_returns_previous_chat_history_for_the_same_email_even_when_names_differ(): void
+    {
+        $agent = Agent::query()->create([
+            'name' => 'Support Agent',
+            'company_name' => 'Acme Demo',
+            'widget_token' => 'demo-widget-token',
+        ]);
+
+        $previousSession = ChatSession::query()->create([
+            'agent_id' => $agent->id,
+            'visitor_name' => 'Old Name',
+            'visitor_email' => 'sharmin@example.com',
+            'last_message_at' => now()->subDay(),
+            'created_at' => now()->subDay(),
+        ]);
+
+        ChatMessage::query()->create([
+            'agent_id' => $agent->id,
+            'chat_session_id' => $previousSession->id,
+            'role' => 'user',
+            'content' => 'Tell me about pricing',
+            'created_at' => now()->subDay(),
+        ]);
+
+        ChatMessage::query()->create([
+            'agent_id' => $agent->id,
+            'chat_session_id' => $previousSession->id,
+            'role' => 'assistant',
+            'content' => 'Pricing starts at 99 BHD.',
+            'created_at' => now()->subDay()->addMinute(),
+        ]);
+
+        $currentSession = ChatSession::query()->create([
+            'agent_id' => $agent->id,
+            'visitor_name' => 'New Name',
+            'visitor_email' => 'sharmin@example.com',
+            'last_message_at' => now(),
+        ]);
+
+        $otherSession = ChatSession::query()->create([
+            'agent_id' => $agent->id,
+            'visitor_name' => 'Someone Else',
+            'visitor_email' => 'other@example.com',
+            'last_message_at' => now()->subHours(2),
+        ]);
+
+        ChatMessage::query()->create([
+            'agent_id' => $agent->id,
+            'chat_session_id' => $otherSession->id,
+            'role' => 'user',
+            'content' => 'This should not be included',
+        ]);
+
+        $response = $this->getJson('/widget/'.$agent->widget_token.'/bootstrap?session_id='.$currentSession->public_id);
+
+        $response->assertOk()
+            ->assertJsonPath('data.history.0.session_id', $previousSession->public_id)
+            ->assertJsonPath('data.history.0.title', 'Tell me about pricing')
+            ->assertJsonPath('data.history.0.preview', 'Pricing starts at 99 BHD.')
+            ->assertJsonCount(2, 'data.history.0.transcript')
+            ->assertJsonPath('data.history.0.transcript.0.role', 'user')
+            ->assertJsonPath('data.history.0.transcript.1.role', 'assistant');
     }
 
     public function test_it_lists_help_articles_for_ready_knowledge_files(): void

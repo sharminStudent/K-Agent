@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatSession;
+use App\Models\Agent;
 use App\Services\AgentService;
 use App\Support\WorkspaceBranding;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -102,6 +104,7 @@ class WidgetController extends Controller
                         'created_at' => $message->created_at?->toISOString(),
                     ])->all(),
                 ] : null,
+                'history' => $chatSession ? $this->conversationHistory($agent, $chatSession) : [],
             ],
         ]);
     }
@@ -166,6 +169,54 @@ class WidgetController extends Controller
         return mb_strlen($normalized) > $limit
             ? mb_substr($normalized, 0, $limit - 1).'...'
             : $normalized;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function conversationHistory(Agent $agent, ChatSession $chatSession): array
+    {
+        $email = mb_strtolower(trim((string) $chatSession->visitor_email));
+
+        if ($email === '') {
+            return [];
+        }
+
+        return ChatSession::query()
+            ->with(['messages' => fn ($query) => $query->orderBy('id')])
+            ->where('agent_id', $agent->id)
+            ->whereKeyNot($chatSession->getKey())
+            ->whereRaw('LOWER(visitor_email) = ?', [$email])
+            ->where(function (Builder $query): void {
+                $query
+                    ->whereHas('messages')
+                    ->orWhereNotNull('last_message_at');
+            })
+            ->orderByRaw('COALESCE(last_message_at, created_at) desc')
+            ->limit(12)
+            ->get()
+            ->map(function (ChatSession $historySession): array {
+                $messages = $historySession->messages->map(fn ($message) => [
+                    'message_id' => $message->public_id,
+                    'role' => $message->role,
+                    'content' => $message->content,
+                    'created_at' => $message->created_at?->toISOString(),
+                ])->all();
+
+                $firstUserMessage = collect($messages)
+                    ->firstWhere('role', 'user');
+                $lastMessage = $messages !== [] ? $messages[array_key_last($messages)] : null;
+
+                return [
+                    'session_id' => $historySession->public_id,
+                    'title' => mb_substr((string) ($firstUserMessage['content'] ?? 'Previous chat'), 0, 48),
+                    'preview' => (string) ($lastMessage['content'] ?? 'Open conversation'),
+                    'updated_at' => $historySession->last_message_at?->toISOString()
+                        ?? $historySession->created_at?->toISOString(),
+                    'transcript' => $messages,
+                ];
+            })
+            ->all();
     }
 
     /**

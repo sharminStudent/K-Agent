@@ -232,7 +232,7 @@
             >
                 <div class="ka-space-head">
                     <h2 class="ka-space-title">Messages</h2>
-                    <p class="ka-space-copy">Saved chats appear here after the visitor closes the widget.</p>
+                    <p class="ka-space-copy">Past chats appear here after contact is captured, and closed local chats stay available on this device.</p>
                 </div>
 
                 <div class="ka-archive-list">
@@ -437,6 +437,34 @@
                     }, ...this.messages.filter((message) => message.message_id !== 'welcome')];
                 },
 
+                mergeArchives(serverArchives = []) {
+                    const normalizedServerArchives = Array.isArray(serverArchives)
+                        ? serverArchives.map((chat) => ({
+                            sessionId: chat.session_id,
+                            title: chat.title || 'Previous chat',
+                            preview: chat.preview || 'Open conversation',
+                            updatedAt: chat.updated_at || null,
+                            transcript: Array.isArray(chat.transcript) ? chat.transcript : [],
+                            source: 'server',
+                        }))
+                        : [];
+                    const localArchives = Array.isArray(this.archives)
+                        ? this.archives.map((chat) => ({ ...chat, source: chat.source || 'local' }))
+                        : [];
+                    const merged = [...normalizedServerArchives];
+
+                    localArchives.forEach((chat) => {
+                        if (!merged.some((item) => item.sessionId === chat.sessionId)) {
+                            merged.push(chat);
+                        }
+                    });
+
+                    this.archives = merged
+                        .sort((left, right) => new Date(right.updatedAt || 0).getTime() - new Date(left.updatedAt || 0).getTime())
+                        .slice(0, 12);
+                    this.saveState();
+                },
+
                 async hydrateConversation(sessionId = null) {
                     const url = sessionId ? `${this.bootstrapUrl}?session_id=${encodeURIComponent(sessionId)}` : this.bootstrapUrl;
                     const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -461,9 +489,24 @@
                         this.ensureWelcomeAtTop();
                     }
                     this.messages.forEach((message) => this.seenMessageIds.add(message.message_id));
+                    this.mergeArchives(payload.data?.history || []);
                     this.connectEcho();
-                    this.saveState();
                     this.$nextTick(() => this.scrollToBottom());
+                },
+
+                async refreshHistory() {
+                    if (!this.sessionId) return;
+
+                    try {
+                        const response = await fetch(`${this.bootstrapUrl}?session_id=${encodeURIComponent(this.sessionId)}`, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+
+                        if (!response.ok) return;
+
+                        const payload = await response.json();
+                        this.mergeArchives(payload.data?.history || []);
+                    } catch {}
                 },
 
                 async ensureSession() {
@@ -609,6 +652,8 @@
                             message: content,
                         });
 
+                        await this.refreshHistory();
+
                         const assistantMessage = payload.data.assistant_message;
 
                         setTimeout(() => {
@@ -649,6 +694,7 @@
                                 content: message.content,
                                 created_at: message.created_at,
                             })),
+                            source: 'local',
                         }, ...this.archives.filter((chat) => chat.sessionId !== this.sessionId)].slice(0, 12);
                     }
 
