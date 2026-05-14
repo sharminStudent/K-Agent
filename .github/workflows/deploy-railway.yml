@@ -1,10 +1,6 @@
 name: Deploy to Railway
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_run:
     workflows:
       - Tests
@@ -24,7 +20,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
 
