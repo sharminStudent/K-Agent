@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ChatSession;
 use App\Models\Agent;
+use App\Models\ChatSession;
 use App\Services\AgentService;
 use App\Support\WorkspaceBranding;
 use Illuminate\Database\Eloquent\Builder;
