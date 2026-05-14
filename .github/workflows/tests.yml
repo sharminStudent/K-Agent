@@ -80,4 +80,6 @@ jobs:
         run: psql -h 127.0.0.1 -U k_agent_user -d k_agent -c "CREATE SCHEMA IF NOT EXISTS testing;"
 
       - name: Execute tests
-        run: composer test
+        run: |
+          php artisan config:clear --ansi
+          php artisan test
