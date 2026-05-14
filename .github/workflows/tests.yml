@@ -74,5 +74,10 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Create testing schema
+        env:
+          PGPASSWORD: Agent@123
+        run: psql -h 127.0.0.1 -U k_agent_user -d k_agent -c "CREATE SCHEMA IF NOT EXISTS testing;"
+
       - name: Execute tests
         run: composer test
