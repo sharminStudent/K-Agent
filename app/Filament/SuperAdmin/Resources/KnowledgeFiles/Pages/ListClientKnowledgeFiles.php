@@ -33,7 +33,7 @@ class ListClientKnowledgeFiles extends Page implements HasTable
 
     protected Width|string|null $maxContentWidth = Width::Full;
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
     }

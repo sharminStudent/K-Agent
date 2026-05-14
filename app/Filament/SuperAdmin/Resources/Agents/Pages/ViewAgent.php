@@ -34,7 +34,7 @@ class ViewAgent extends Page
      */
     public ?array $data = [];
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
 
@@ -43,7 +43,7 @@ class ViewAgent extends Page
         );
     }
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return 'View Client';
     }

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Agent;
 use App\Models\ChatSession;
 use App\Models\KnowledgeFile;
 use App\Models\Lead;
-use App\Models\Agent;
 use Carbon\Carbon;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\LogLivewireTemporaryUpload;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use Illuminate\Auth\Events\Login;
@@ -32,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
         config([
             'livewire.temporary_file_upload.disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 'public'),
             'livewire.temporary_file_upload.middleware' => [
-                \App\Http\Middleware\LogLivewireTemporaryUpload::class,
+                LogLivewireTemporaryUpload::class,
                 'throttle:60,1',
             ],
         ]);

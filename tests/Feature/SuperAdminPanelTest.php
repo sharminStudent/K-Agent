@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Agent;
 use App\Models\ActivityLog;
+use App\Models\Agent;
 use App\Models\PaymentRecord;
 use App\Models\User;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 class SuperAdminPanelTest extends TestCase

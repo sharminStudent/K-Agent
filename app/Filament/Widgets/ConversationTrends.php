@@ -63,7 +63,7 @@ class ConversationTrends extends ChartWidget
         return [
             'datasets' => [
                 [
-                'label' => 'Conversation Volume',
+                    'label' => 'Conversation Volume',
                     'data' => $sessionData,
                     'borderColor' => '#d3033d',
                     'backgroundColor' => 'rgba(211, 3, 61, 0.24)',
@@ -74,7 +74,7 @@ class ConversationTrends extends ChartWidget
                     'fill' => true,
                 ],
                 [
-                'label' => 'Lead Capture',
+                    'label' => 'Lead Capture',
                     'data' => $leadData,
                     'borderColor' => '#f59e0b',
                     'backgroundColor' => 'rgba(245, 158, 11, 0.24)',

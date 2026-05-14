@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Agent;
 use App\Models\KnowledgeFile;
+use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ class KnowledgeService
                 severity: 'normal',
                 status: 'success',
                 agent: $agent,
-                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                user: $currentUser instanceof User ? $currentUser : null,
                 subject: $knowledgeFile,
                 meta: [
                     'summary' => $knowledgeFile->original_name,
@@ -100,7 +101,7 @@ class KnowledgeService
                 severity: 'normal',
                 status: 'success',
                 agent: $agent,
-                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                user: $currentUser instanceof User ? $currentUser : null,
                 subject: $knowledgeFile,
                 meta: [
                     'summary' => $title,
@@ -160,7 +161,7 @@ class KnowledgeService
                 severity: 'normal',
                 status: 'success',
                 agent: $agent,
-                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                user: $currentUser instanceof User ? $currentUser : null,
                 subject: $updatedKnowledgeFile,
                 meta: [
                     'summary' => $title,
@@ -223,7 +224,7 @@ class KnowledgeService
                         severity: 'normal',
                         status: 'success',
                         agent: $agent,
-                        user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                        user: $currentUser instanceof User ? $currentUser : null,
                         subject: $knowledgeFile,
                         meta: [
                             'summary' => $knowledgeFile->original_name,
@@ -246,7 +247,7 @@ class KnowledgeService
                     severity: 'critical',
                     status: 'failed',
                     agent: $agent,
-                    user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                    user: $currentUser instanceof User ? $currentUser : null,
                     subject: $knowledgeFile,
                     meta: [
                         'summary' => $knowledgeFile->original_name,
@@ -283,7 +284,7 @@ class KnowledgeService
                 severity: 'normal',
                 status: 'success',
                 agent: $knowledgeFile->agent,
-                user: $currentUser instanceof \App\Models\User ? $currentUser : null,
+                user: $currentUser instanceof User ? $currentUser : null,
                 subject: $knowledgeFile,
                 meta: [
                     'summary' => $knowledgeFile->original_name,

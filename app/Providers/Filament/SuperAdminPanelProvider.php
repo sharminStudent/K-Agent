@@ -3,11 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
-use App\Support\WorkspaceBranding;
 use App\Filament\SuperAdmin\Widgets\PlatformStats;
 use App\Filament\SuperAdmin\Widgets\RecentCompaniesTable;
 use App\Filament\SuperAdmin\Widgets\RecentPlatformChatsTable;
 use App\Filament\SuperAdmin\Widgets\SystemMonitoringStats;
+use App\Support\WorkspaceBranding;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;

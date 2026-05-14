@@ -7,8 +7,8 @@ use App\Models\Agent;
 use App\Services\ClientAccountService;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Support\Icons\Heroicon;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
 
 class ManageAgents extends ManageRecords

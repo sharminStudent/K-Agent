@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Services\ActivityLogService;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Facades\Filament;

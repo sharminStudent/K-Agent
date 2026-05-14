@@ -7,6 +7,7 @@ use App\Models\Agent;
 use App\Models\ChatSession;
 use App\Models\KnowledgeFile;
 use App\Services\AgentProviderConfigService;
+use App\Services\GuardrailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -1286,7 +1287,7 @@ class ChatApiTest extends TestCase
     {
         Http::fake();
 
-        $this->partialMock(\App\Services\GuardrailService::class, function ($mock): void {
+        $this->partialMock(GuardrailService::class, function ($mock): void {
             $mock->shouldReceive('detectViolation')
                 ->times(2)
                 ->andReturnNull();
