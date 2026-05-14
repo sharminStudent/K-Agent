@@ -62,8 +62,8 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Copy environment file
-        run: cp .env.example .env
+      - name: Copy testing environment file
+        run: cp .env.testing .env
 
       - name: Generate app key
         run: php artisan key:generate
