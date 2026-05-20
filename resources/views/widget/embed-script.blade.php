@@ -69,11 +69,20 @@
         var isPhoneScreen = window.matchMedia('(max-width: 640px)').matches;
         var isVeryNarrowScreen = window.matchMedia('(max-width: 420px)').matches;
         var isShortScreen = window.matchMedia('(max-height: 720px)').matches;
+        var openInNewWindow = isPhoneScreen();
+
+        if (openInNewWindow) {
+            isOpen = false;
+            frame.style.display = 'none';
+            syncState();
+        } else {
+            frame.style.display = 'block';
+        }
 
         frame.style.top = 'auto';
         frame.style.left = 'auto';
 
-        if (isPhoneScreen) {
+        if (openInNewWindow) {
             frame.style.right = 'max(12px, env(safe-area-inset-right))';
             frame.style.bottom = 'max(74px, calc(env(safe-area-inset-bottom) + 62px))';
             frame.style.width = isVeryNarrowScreen ? 'calc(100vw - 24px)' : 'min(340px, calc(100vw - 24px))';
@@ -93,10 +102,10 @@
             frame.style.borderRadius = '16px';
         }
 
-        launcher.style.right = isPhoneScreen ? 'max(12px, env(safe-area-inset-right))' : '24px';
-        launcher.style.bottom = isPhoneScreen ? 'max(12px, env(safe-area-inset-bottom))' : '24px';
-        launcher.style.width = isPhoneScreen ? '54px' : '60px';
-        launcher.style.height = isPhoneScreen ? '54px' : '60px';
+        launcher.style.right = openInNewWindow ? 'max(12px, env(safe-area-inset-right))' : '24px';
+        launcher.style.bottom = openInNewWindow ? 'max(12px, env(safe-area-inset-bottom))' : '24px';
+        launcher.style.width = openInNewWindow ? '54px' : '60px';
+        launcher.style.height = openInNewWindow ? '54px' : '60px';
     }
 
     function isPhoneScreen() {
