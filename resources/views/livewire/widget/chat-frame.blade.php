@@ -341,6 +341,7 @@
                 error: '',
                 sending: false,
                 typing: false,
+                clockNow: Date.now(),
                 sessionId: null,
                 messages: [],
                 archives: [],
@@ -357,6 +358,9 @@
                     this.parentOrigin = this.resolveParentOrigin();
                     this.theme = persisted.theme || 'dark';
                     this.archives = Array.isArray(persisted.archives) ? persisted.archives : [];
+                    window.setInterval(() => {
+                        this.clockNow = Date.now();
+                    }, 30000);
                     this.ensureWelcome();
                     this.$nextTick(() => this.scrollToBottom());
                 },
@@ -737,9 +741,49 @@
                 },
 
                 relativeTime(value) {
-                    if (!value) return 'Just Now';
-                    const minutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000));
+                    const timestamp = this.normalizeTimestamp(value);
+
+                    if (timestamp === null) {
+                        return 'Just Now';
+                    }
+
+                    const minutes = Math.floor(Math.max(0, this.clockNow - timestamp) / 60000);
+
                     return minutes <= 1 ? 'Just Now' : `${minutes} min`;
+                },
+
+                normalizeTimestamp(value) {
+                    if (!value) {
+                        return null;
+                    }
+
+                    if (typeof value === 'number' && Number.isFinite(value)) {
+                        return value > 1000000000000 ? value : value * 1000;
+                    }
+
+                    if (typeof value === 'string') {
+                        const trimmed = value.trim();
+
+                        if (trimmed === '') {
+                            return null;
+                        }
+
+                        if (/^\d+$/.test(trimmed)) {
+                            const numeric = Number.parseInt(trimmed, 10);
+
+                            if (Number.isFinite(numeric)) {
+                                return numeric > 1000000000000 ? numeric : numeric * 1000;
+                            }
+                        }
+
+                        const parsed = Date.parse(trimmed);
+
+                        if (Number.isFinite(parsed)) {
+                            return parsed;
+                        }
+                    }
+
+                    return null;
                 },
 
                 async postJson(url, payload) {
