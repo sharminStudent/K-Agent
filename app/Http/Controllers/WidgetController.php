@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agent;
 use App\Models\ChatSession;
 use App\Services\AgentService;
+use App\Services\LeadCaptureService;
 use App\Support\WorkspaceBranding;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,7 @@ class WidgetController extends Controller
 {
     public function __construct(
         protected AgentService $agentService,
+        protected LeadCaptureService $leadCaptureService,
     ) {}
 
     public function script(string $widgetToken): Response
@@ -104,7 +106,9 @@ class WidgetController extends Controller
                         'created_at' => $message->created_at?->toISOString(),
                     ])->all(),
                 ] : null,
-                'history' => $chatSession ? $this->conversationHistory($agent, $chatSession) : [],
+                'history' => $chatSession && $this->leadCaptureService->hasRequiredContact($agent, $chatSession)
+                    ? $this->conversationHistory($agent, $chatSession)
+                    : [],
             ],
         ]);
     }
