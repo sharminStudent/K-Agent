@@ -100,7 +100,12 @@
     }
 
     function isPhoneScreen() {
-        return window.matchMedia('(max-width: 640px)').matches;
+        var mobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator.userAgent || '');
+        var coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+        var compactViewport = window.matchMedia('(max-width: 1024px)').matches;
+        var touchCapable = (navigator.maxTouchPoints || 0) > 0;
+
+        return compactViewport && (mobileAgent || coarsePointer || touchCapable);
     }
 
     function openMobileWindow() {
