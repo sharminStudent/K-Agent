@@ -99,19 +99,34 @@
         launcher.style.height = isPhoneScreen ? '54px' : '60px';
     }
 
+    function isPhoneScreen() {
+        return window.matchMedia('(max-width: 640px)').matches;
+    }
+
     function syncState() {
         frame.style.opacity = isOpen ? '1' : '0';
         frame.style.pointerEvents = isOpen ? 'auto' : 'none';
         frame.style.transform = isOpen ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.98)';
         frame.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-        launcher.style.opacity = isOpen ? '0' : '1';
-        launcher.style.pointerEvents = isOpen ? 'none' : 'auto';
-        launcher.style.transform = isOpen ? 'scale(0.92)' : 'scale(1)';
+
+        if (isOpen && isPhoneScreen()) {
+            launcher.style.opacity = '1';
+            launcher.style.pointerEvents = 'auto';
+            launcher.style.transform = 'scale(1)';
+        } else {
+            launcher.style.opacity = isOpen ? '0' : '1';
+            launcher.style.pointerEvents = isOpen ? 'none' : 'auto';
+            launcher.style.transform = isOpen ? 'scale(0.92)' : 'scale(1)';
+        }
+
         launcher.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         launcher.innerHTML = isOpen ? closeIcon : chatIcon;
     }
 
-    launcher.addEventListener('click', function () {
+    launcher.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
         isOpen = !isOpen;
         syncState();
     });
