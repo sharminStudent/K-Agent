@@ -61,15 +61,20 @@
     launcher.style.zIndex = '2147483647';
     launcher.style.display = 'grid';
     launcher.style.placeItems = 'center';
+    launcher.style.visibility = 'visible';
     launcher.innerHTML = chatIcon;
 
     var isOpen = false;
 
+    function isCompactViewport() {
+        return window.matchMedia('(max-width: 1024px)').matches;
+    }
+
     function applyLayout() {
-        var isPhoneScreen = window.matchMedia('(max-width: 640px)').matches;
+        var isPhoneScreen = isCompactViewport();
         var isVeryNarrowScreen = window.matchMedia('(max-width: 420px)').matches;
         var isShortScreen = window.matchMedia('(max-height: 720px)').matches;
-        var openInNewWindow = isPhoneScreen();
+        var openInNewWindow = isPhoneScreen;
 
         if (openInNewWindow) {
             isOpen = false;
@@ -108,10 +113,6 @@
         launcher.style.height = openInNewWindow ? '54px' : '60px';
     }
 
-    function isPhoneScreen() {
-        return window.matchMedia('(max-width: 1024px)').matches;
-    }
-
     function openMobileWindow() {
         var popup = window.open(frameUrl, '_blank', 'noopener,noreferrer');
 
@@ -125,6 +126,16 @@
         frame.style.pointerEvents = isOpen ? 'auto' : 'none';
         frame.style.transform = isOpen ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.98)';
         frame.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+        if (isCompactViewport()) {
+            launcher.style.opacity = '1';
+            launcher.style.pointerEvents = 'auto';
+            launcher.style.transform = 'scale(1)';
+            launcher.setAttribute('aria-expanded', 'false');
+            launcher.innerHTML = chatIcon;
+            return;
+        }
+
         launcher.style.opacity = isOpen ? '0' : '1';
         launcher.style.pointerEvents = isOpen ? 'none' : 'auto';
         launcher.style.transform = isOpen ? 'scale(0.92)' : 'scale(1)';
@@ -137,7 +148,7 @@
         event.preventDefault();
         event.stopPropagation();
 
-        if (isPhoneScreen()) {
+        if (isCompactViewport()) {
             openMobileWindow();
             return;
         }
@@ -179,8 +190,8 @@
 
     window.addEventListener('resize', applyLayout);
 
-    applyLayout();
-    syncState();
     document.body.appendChild(frame);
     document.body.appendChild(launcher);
+    applyLayout();
+    syncState();
 })();
