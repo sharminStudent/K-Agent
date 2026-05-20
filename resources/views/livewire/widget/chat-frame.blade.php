@@ -373,6 +373,10 @@
                     }
                 },
 
+                isStandaloneWindow() {
+                    return window.parent === window;
+                },
+
                 notifyParent(type) {
                     window.parent.postMessage(
                         { source: 'embedded-chat-widget', type },
@@ -703,6 +707,22 @@
                     this.ensureWelcome();
                     this.closeTransientUi();
                     this.saveState();
+
+                    if (this.isStandaloneWindow()) {
+                        if (window.history.length > 1) {
+                            window.history.back();
+                            return;
+                        }
+
+                        window.close();
+
+                        window.setTimeout(() => {
+                            window.location.href = this.privacyUrl || 'about:blank';
+                        }, 150);
+
+                        return;
+                    }
+
                     this.notifyParent('close');
                 },
 

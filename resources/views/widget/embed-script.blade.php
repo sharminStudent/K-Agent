@@ -114,11 +114,7 @@
     }
 
     function openMobileWindow() {
-        var popup = window.open(frameUrl, '_blank', 'noopener,noreferrer');
-
-        if (!popup) {
-            window.location.href = frameUrl;
-        }
+        window.open(frameUrl, '_blank');
     }
 
     function syncState() {
